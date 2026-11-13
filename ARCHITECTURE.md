@@ -33,10 +33,12 @@ The tool **never modifies** the show folder or media files. Output goes to `outp
 xlights-mashup/
 │  ── Source (in git) ──────────────────────────────────────────────
 ├── app.py                     # Flask server: routes, background jobs, config + first-run setup
-├── mashup_engine.py           # XSQ parsing/merging, media resolution, ffmpeg,
-│                              #   loudness, video re-timing, ending fade
-├── automix.py                 # Audio + lyric analysis, clip candidates, planner (✨ Automate)
-├── library.py                 # Library classification, MusicBrainz, song picker (🎲 Generate)
+├── core/                      # Supporting modules (imported by app.py)
+│   ├── __init__.py
+│   ├── mashup_engine.py       # XSQ parsing/merging, media resolution, ffmpeg,
+│   │                          #   loudness, video re-timing, ending fade
+│   ├── automix.py             # Audio + lyric analysis, clip candidates, planner (✨ Automate)
+│   └── library.py             # Library classification, MusicBrainz, song picker (🎲 Generate)
 ├── templates/
 │   ├── index.html             # Single-page UI (inline CSS + JS, no build step, no CDN)
 │   └── help.html              # User guide served at /help (❓ Help in the app header)
@@ -206,7 +208,7 @@ Times are milliseconds. `id` is sequential per layer (first effect has none).
 
 ---
 
-## 6. Build Engine (`mashup_engine.py`)
+## 6. Build Engine (`core/mashup_engine.py`)
 
 ### 6.1 Pipeline
 
@@ -306,7 +308,7 @@ Limitation: an effect that *starts* inside the window begins at full brightness,
 
 ---
 
-## 8. ✨ Automate (`automix.py`)
+## 8. ✨ Automate (`core/automix.py`)
 
 ### 8.1 Per-song analysis (`analyze_song`, cached)
 
@@ -351,7 +353,7 @@ Typical runtime: 0.2–0.3 s for 6 songs once analysed.
 
 ---
 
-## 9. Library and 🎲 Generate (`library.py`)
+## 9. Library and 🎲 Generate (`core/library.py`)
 
 ### 9.1 Classification (`scan`)
 
@@ -547,4 +549,5 @@ First use of 🎲 Generate offers a one-time library scan (≈ 4–5 min with on
 | 2026-11-12 | `app.py` opens the browser automatically when the server is ready (`--no-browser` to skip); a second launch reuses the running copy |
 | 2026-11-12 | Show paths moved to git-ignored `config.json` with first-launch folder pickers; build window shows the output path relative to the app folder |
 | 2026-11-12 | Cleanup: removed old ad-hoc scripts (`quick_check.py`, `test_resolve.py`) and test builds |
+| 2026-11-12 | Supporting modules moved to the `core/` package (`app.py` stays the entry point); loudness cache stays in the app folder |
 | 2026-11-12 | Help page (`/help`) with 20 screenshots captured from the running app (Playwright driving Edge, headless). Re-take screenshots after visible UI changes so the guide stays accurate |

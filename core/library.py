@@ -40,7 +40,7 @@ from collections import Counter
 
 import numpy as np
 
-import automix
+from . import automix
 
 LIBRARY_VERSION = 2
 MB_USER_AGENT = 'xLightsMashupBuilder/1.0 (personal holiday-lights tool)'

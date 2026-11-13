@@ -16,9 +16,8 @@ import io
 import zipfile
 from flask import Flask, render_template, jsonify, request, send_file
 
-from mashup_engine import scan_sequences, build_mashup
-import automix
-import library
+from core.mashup_engine import scan_sequences, build_mashup
+from core import automix, library
 
 app = Flask(__name__)
 

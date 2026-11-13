@@ -961,7 +961,8 @@ def _renumber_ids(effects_list):
 # ─── Loudness normalisation (like mp3gain / ReplayGain, but EBU R128) ───
 
 LOUDNESS_TARGET_LUFS = -16.0
-_LOUDNESS_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+# Kept in the app folder (one level up from core/), next to the other caches
+_LOUDNESS_CACHE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                     'loudness_cache.json')
 _loudness_cache = None
 
