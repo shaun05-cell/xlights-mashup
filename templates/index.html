@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xLights Mashup Builder</title>
+  <style>
+    :root {
+      --bg-dark: #0f0f1a;
+      --bg-card: #1a1a2e;
+      --bg-card-hover: #222240;
+      --bg-input: #12122a;
+      --border: #2a2a4a;
+      --text: #e0e0f0;
+      --text-dim: #8888aa;
+      --text-bright: #ffffff;
+      --accent-red: #ff4466;
+      --accent-green: #44ff88;
+      --accent-blue: #4488ff;
+      --accent-gold: #ffcc44;
+      --accent-purple: #aa66ff;
+      --danger: #ff3344;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      --radius: 10px;
+      --transition: 0.2s ease;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1a0a2e 0%, #0f1a2e 50%, #0a2e1a 100%);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 10;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent-red), var(--accent-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header .subtitle {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-left: 12px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .help-link {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      background: rgba(0,0,0,0.25);
+    }
+    .help-link:hover { border-color: var(--accent-blue); color: var(--text-bright); }
+
+    /* ── Layout ── */
+    .main-layout {
+      display: flex;
+      height: calc(100vh - 64px);
+    }
+
+    /* ── Left Panel: Sequence Library ── */
+    .library-panel {
+      width: 420px;
+      min-width: 350px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-dark);
+    }
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .panel-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-bright);
+    }
+    .search-box {
+      width: 100%;
+      padding: 9px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .search-box:focus { border-color: var(--accent-blue); }
+    .search-box::placeholder { color: var(--text-dim); }
+
+    .seq-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .seq-list::-webkit-scrollbar { width: 6px; }
+    .seq-list::-webkit-scrollbar-track { background: transparent; }
+    .seq-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .seq-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+    }
+    .seq-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-blue);
+      transform: translateX(3px);
+    }
+    .seq-card .seq-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seq-card .seq-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .seq-card .seq-folder {
+      font-size: 11px;
+      color: var(--accent-purple);
+      opacity: 0.7;
+      margin-bottom: 2px;
+    }
+    .seq-card .add-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--accent-green);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .seq-card:hover .add-btn { opacity: 1; }
+    .seq-card .add-btn:hover { background: #66ffaa; }
+    .seq-card.no-media {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .seq-count {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+      text-align: center;
+    }
+
+    /* ── Right Panel: Mashup Timeline ── */
+    .mashup-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-dark);
+    }
+
+    .mashup-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .mashup-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-right: auto;
+    }
+    .mashup-header label {
+      font-size: 13px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mashup-header input[type="text"],
+    .mashup-header input[type="number"] {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      width: 140px;
+    }
+    .mashup-header input[type="number"] { width: 70px; }
+    .mashup-header input:focus { border-color: var(--accent-blue); }
+
+    .mashup-timeline {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+    .mashup-timeline::-webkit-scrollbar { width: 6px; }
+    .mashup-timeline::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .timeline-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      color: var(--text-dim);
+      font-size: 15px;
+    }
+    .timeline-empty .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+    /* ── Clip Card ── */
+    .clip-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      position: relative;
+      transition: all var(--transition);
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .clip-card:hover { border-color: var(--accent-blue); }
+
+    .clip-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .clip-number {
+      background: var(--accent-blue);
+      color: #000;
+      font-size: 12px;
+      font-weight: 800;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .clip-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-bright);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .clip-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .clip-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all var(--transition);
+    }
+    .clip-actions button:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+    .clip-actions .remove-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* ── Drag & drop ── */
+    .drag-handle {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      line-height: 1;
+      padding: 2px 4px;
+      cursor: grab;
+      user-select: none;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .drag-handle:hover { color: var(--text-bright); background: var(--bg-input); }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-handle:focus-visible { outline: 2px solid var(--accent-blue); }
+    .clip-card.dragging {
+      opacity: 0.35;
+      border-style: dashed;
+    }
+    .drop-indicator {
+      height: 4px;
+      margin: -7px 0 3px;   /* net zero height so cards don't jump around */
+      background: var(--accent-green);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--accent-green);
+      pointer-events: none;
+    }
+    .mashup-timeline.drag-over {
+      outline: 2px dashed rgba(68,255,136,0.35);
+      outline-offset: -8px;
+    }
+    .seq-card[draggable="true"] { cursor: grab; }
+
+    .clip-controls {
+      display: flex;
+      gap: 16px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+    .clip-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .clip-field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .clip-field input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 7px 10px;
+      font-size: 13px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      outline: none;
+      width: 100px;
+    }
+    .clip-field input:focus { border-color: var(--accent-blue); }
+    .clip-field .readonly {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text-dim);
+    }
+
+    /* ── Dual-handle range slider ── */
+    .range-wrap { margin-bottom: 14px; }
+    .range-slider {
+      position: relative;
+      height: 30px;
+    }
+    .range-track {
+      position: absolute;
+      top: 50%;
+      left: 9px;          /* inset by half the thumb width so fill lines up */
+      right: 9px;
+      height: 8px;
+      transform: translateY(-50%);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .range-fill {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 4px;
+    }
+    .range-slider input[type="range"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: none;
+      pointer-events: none;   /* only the thumbs are grabbable */
+      -webkit-appearance: none;
+      appearance: none;
+      z-index: 2;
+    }
+    .range-slider input[type="range"]:focus { outline: none; }
+    .range-slider input[type="range"]::-webkit-slider-runnable-track {
+      background: transparent; height: 100%;
+    }
+    .range-slider input[type="range"]::-moz-range-track { background: transparent; }
+    .range-slider input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      pointer-events: auto;
+      width: 18px;
+      height: 26px;
+      margin-top: 2px;
+      border-radius: 5px;
+      background: var(--accent-green);
+      border: 2px solid #0a0a14;
+      box-shadow: 0 0 0 1px var(--accent-green), 0 2px 6px rgba(0,0,0,0.5);
+      cursor: ew-resize;
+    }
+    .range-slider input[type="range"]::-moz-range-thumb {
+      pointer-events: auto;
+      width: 14px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--accent-green);
+      border: 2px solid #0a0a14;
+      box-shadow: 0 0 0 1px var(--accent-green);
+      cursor: ew-resize;
+    }
+    .range-slider input.range-end::-webkit-slider-thumb {
+      background: var(--accent-red);
+      box-shadow: 0 0 0 1px var(--accent-red), 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .range-slider input.range-end::-moz-range-thumb {
+      background: var(--accent-red);
+      box-shadow: 0 0 0 1px var(--accent-red);
+    }
+    .range-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
+      outline: 2px solid var(--text-bright);
+    }
+    .range-scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: 'Consolas', monospace;
+      padding: 2px 4px 0;
+    }
+    .range-scale .pct { color: var(--accent-gold); }
+
+    /* ── Bottom Bar ── */
+    .bottom-bar {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .total-duration {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    .total-duration span {
+      color: var(--accent-gold);
+      font-weight: 700;
+      font-family: 'Consolas', monospace;
+    }
+    .spacer { flex: 1; }
+    .total-duration .max-note { color: var(--text-dim); font-weight: 400; font-family: inherit; }
+    .total-duration.over span#totalDuration { color: var(--danger); }
+    .total-duration .max-note.over { color: var(--danger); font-weight: 600; }
+
+    .build-btn {
+      background: linear-gradient(135deg, var(--accent-red), #cc2244);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 15px rgba(255,68,102,0.3);
+    }
+    .build-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255,68,102,0.5);
+    }
+    .build-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── Modal / Overlay ── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+    .modal h3 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      color: var(--text-bright);
+    }
+    .modal p {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .modal .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-input);
+      border-radius: 3px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .modal .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* ── Result / Download ── */
+    .result-section {
+      margin-top: 20px;
+    }
+    .download-link {
+      display: inline-block;
+      background: var(--accent-green);
+      color: #000;
+      text-decoration: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      margin: 6px;
+      transition: all var(--transition);
+    }
+    .download-link:hover {
+      background: #66ffaa;
+      transform: translateY(-1px);
+    }
+    .close-btn {
+      display: inline-block;
+      background: none;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all var(--transition);
+    }
+    .close-btn:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── Save / Load ── */
+    .hdr-btns { display: flex; gap: 6px; }
+    .hdr-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .hdr-btn:hover { border-color: var(--accent-blue); color: var(--text-bright); }
+    .hdr-btn.primary { border-color: var(--accent-green); color: var(--accent-green); }
+    .hdr-btn.primary:hover { background: rgba(68,255,136,0.1); }
+    .save-status {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-weight: 400;
+      margin-left: 8px;
+    }
+    .save-status.dirty { color: var(--accent-gold); }
+
+    .modal.load-modal { max-width: 620px; text-align: left; }
+    .modal.load-modal h3 { text-align: center; }
+    .load-list {
+      max-height: 55vh;
+      overflow-y: auto;
+      margin: 8px 0;
+    }
+    .load-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background: var(--bg-input);
+    }
+    .load-item:hover { border-color: var(--accent-blue); }
+    .load-item.current { border-color: var(--accent-green); }
+    .load-item .info { flex: 1; min-width: 0; }
+    .load-item .name {
+      font-weight: 600;
+      color: var(--text-bright);
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .load-item .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .load-item .songs {
+      font-size: 11px;
+      color: var(--accent-purple);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .load-item button {
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-dim);
+    }
+    .load-item .load-btn {
+      background: var(--accent-green);
+      color: #000;
+      border-color: var(--accent-green);
+      font-weight: 700;
+    }
+    .load-item .del-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .load-empty { text-align: center; color: var(--text-dim); padding: 30px 0; }
+
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-card);
+      border: 1px solid var(--accent-green);
+      color: var(--text-bright);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 200;
+      max-width: 90vw;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.warn { border-color: var(--accent-gold); }
+    .toast.error { border-color: var(--danger); }
+
+    /* ── Automate ── */
+    .auto-btn {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 15px rgba(170,102,255,0.3);
+    }
+    .auto-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(170,102,255,0.5);
+    }
+    .auto-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .modal.auto-modal { max-width: 680px; text-align: left; }
+    .modal.auto-modal h3 { text-align: center; }
+    .auto-intro { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+    .auto-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .auto-opt input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent-green); }
+    .auto-opt input[type="range"] { flex: 1; accent-color: var(--accent-purple); }
+    .auto-opt .val {
+      font-family: 'Consolas', monospace;
+      color: var(--accent-gold);
+      min-width: 44px;
+      text-align: right;
+    }
+    .auto-opt small { color: var(--text-dim); font-size: 12px; }
+    .modal-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+    .modal-actions .go-btn {
+      background: var(--accent-green);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .modal-actions .go-btn:hover { background: #66ffaa; }
+    .modal-actions .close-btn { margin-top: 0; }
+
+    .plan-list { max-height: 52vh; overflow-y: auto; margin: 10px 0; }
+    .plan-clip {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .plan-clip .top { display: flex; gap: 10px; align-items: baseline; }
+    .plan-clip .num { color: var(--accent-blue); font-weight: 800; }
+    .plan-clip .nm {
+      flex: 1;
+      font-weight: 600;
+      color: var(--text-bright);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .plan-clip .tm { font-family: 'Consolas', monospace; font-size: 12px; color: var(--accent-gold); white-space: nowrap; }
+    .plan-clip .why { font-size: 12px; color: var(--text); margin-top: 4px; }
+    .plan-clip .src { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+    .plan-trans {
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 5px 0 5px 22px;
+    }
+    .plan-trans .smooth { color: var(--accent-green); }
+    .plan-trans .good { color: var(--accent-gold); }
+    .plan-trans .bold { color: var(--accent-red); }
+    .plan-summary { font-size: 13px; color: var(--text-dim); text-align: center; }
+
+    .clip-note {
+      font-size: 12px;
+      color: var(--accent-purple);
+      margin: -6px 0 10px 38px;
+    }
+
+    /* ── Library categories ── */
+    .cat-filter {
+      width: 100%;
+      margin-top: 8px;
+      padding: 7px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    .seq-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; padding-right: 60px; }
+    .cat-chip {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(170,102,255,0.14);
+      color: #c9a8ff;
+      border: 1px solid rgba(170,102,255,0.3);
+      white-space: nowrap;
+    }
+    .cat-chip.theme { background: rgba(68,255,136,0.10); color: #8dffb8; border-color: rgba(68,255,136,0.3); }
+    .cat-chip.mood { background: rgba(255,204,68,0.10); color: #ffd97a; border-color: rgba(255,204,68,0.3); }
+    .seq-card .edit-cats {
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 5px;
+      font-size: 11px;
+      padding: 2px 6px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .seq-card:hover .edit-cats { opacity: 1; }
+    .seq-card .edit-cats:hover { color: var(--text-bright); border-color: var(--accent-purple); }
+
+    .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin: 10px 0; }
+    .cat-grid label { font-size: 13px; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+    .cat-grid input { accent-color: var(--accent-purple); }
+    .cat-why { font-size: 11px; color: var(--text-dim); margin: 2px 0; }
+    .modal input.text-in {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    /* ── Generate ── */
+    .gen-btn {
+      background: linear-gradient(135deg, var(--accent-gold), #ff8844);
+      color: #1a1000;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 15px rgba(255,170,68,0.3);
+    }
+    .gen-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,170,68,0.5); }
+    .gen-cats { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+    .gen-cat {
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 5px 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .gen-cat .n { color: var(--text-dim); margin-left: 4px; }
+    .gen-cat.on { background: var(--accent-purple); border-color: var(--accent-purple); color: #fff; }
+    .gen-cat.on .n { color: #e8dcff; }
+    .gen-cat:disabled { opacity: 0.35; cursor: not-allowed; }
+    .gen-group { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); margin-top: 6px; }
+    .gen-list { font-size: 12px; color: var(--text-dim); margin: 6px 0; line-height: 1.7; }
+    .gen-list .pill {
+      display: inline-block;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1px 4px 1px 9px;
+      margin: 2px 3px 2px 0;
+      color: var(--text);
+    }
+    .gen-list .pill button {
+      background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 0 4px;
+    }
+    .gen-list .pill button:hover { color: var(--danger); }
+    .picked-row { font-size: 12px; color: var(--text); padding: 3px 0; }
+    .picked-row .cats { color: var(--text-dim); font-size: 11px; }
+
+    .norm-opt { font-size: 12px; color: var(--text-dim); display: flex; gap: 6px; align-items: center; cursor: pointer; }
+    .norm-opt input { accent-color: var(--accent-green); }
+
+    /* ── Error Toast ── */
+    .error-msg {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    /* ── Loading Spinner ── */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent-green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 16px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .main-layout { flex-direction: column; }
+      .library-panel { width: 100%; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div style="display:flex;align-items:baseline;">
+      <h1>🎄 xLights Mashup Builder</h1>
+      <span class="subtitle">Create mashup sequences from your xLights library</span>
+    </div>
+    <div class="header-right">
+      <span id="statusBadge" style="font-size:12px;color:var(--text-dim);">Loading...</span>
+      <a href="/help" target="_blank" rel="noopener" class="help-link" title="How to use the Mashup Builder">❓ Help</a>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="main-layout">
+
+    <!-- Left: Sequence Library -->
+    <div class="library-panel">
+      <div class="panel-header">
+        <h2>📂 Sequence Library</h2>
+        <input type="text" class="search-box" id="searchBox"
+               placeholder="Search sequences..." autocomplete="off">
+        <select id="catFilter" class="cat-filter" onchange="renderSequenceList()">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="seq-list" id="seqList"></div>
+      <div class="seq-count" id="seqCount">Loading sequences...</div>
+    </div>
+
+    <!-- Right: Mashup Timeline -->
+    <div class="mashup-panel">
+      <div class="mashup-header">
+        <h2>🎶 Mashup Timeline <span class="save-status" id="saveStatus"></span></h2>
+        <label>
+          Name:
+          <input type="text" id="mashupName" value="MyMashup"
+                 placeholder="Mashup name">
+        </label>
+        <label>
+          Crossfade (ms):
+          <input type="number" id="crossfadeMs" value="0"
+                 min="0" max="5000" step="100">
+        </label>
+        <label title="Longest the whole mashup may be, e.g. 5:00 (or 5 for five minutes). Leave empty for no limit.">
+          Max length:
+          <input type="text" id="maxLength" value="" placeholder="none"
+                 style="width:70px" autocomplete="off">
+        </label>
+        <div class="hdr-btns">
+          <button class="hdr-btn" onclick="newMashup()" title="Start a new, empty mashup">➕ New</button>
+          <button class="hdr-btn" onclick="openLoadDialog()" title="Open a saved mashup">📂 Load</button>
+          <button class="hdr-btn primary" onclick="saveMashup()" title="Save (Ctrl+S)">💾 Save</button>
+        </div>
+      </div>
+
+      <div class="mashup-timeline" id="mashupTimeline">
+        <div class="timeline-empty" id="emptyState">
+          <div class="icon">🎵</div>
+          <div>Click + Add or drag a sequence here to start your mashup</div>
+          <div style="font-size:13px;margin-top:8px;color:var(--text-dim);">
+            Set start/end times for each clip, then hit Build
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <div class="total-duration">
+          Clips: <span id="clipCount">0</span> &nbsp;|&nbsp;
+          Total Duration: <span id="totalDuration">0:00</span><span id="maxNote" class="max-note"></span>
+        </div>
+        <div class="spacer"></div>
+        <label class="norm-opt" title="Bring every song to the same loudness (−16 LUFS, like mp3gain) when building">
+          <input type="checkbox" id="normalizeAudio" checked onchange="markDirty()"> Even out loudness
+        </label>
+        <label class="norm-opt" title="Fade the music and the lights out over the last few seconds instead of stopping abruptly (uses xLights' Fade Out transition on the final effects)">
+          <input type="checkbox" id="fadeOutOn" checked onchange="markDirty()"> Fade out ending
+          <input type="number" id="fadeOutSec" value="3" min="0.5" max="15" step="0.5"
+                 onchange="markDirty()"
+                 style="width:52px;background:var(--bg-input);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 5px;font-size:12px;">s
+        </label>
+        <button class="gen-btn" id="genBtn" onclick="openGenerateDialog()"
+                title="Pick songs from your library by category and build a mashup from them">
+          🎲 Generate
+        </button>
+        <button class="auto-btn" id="autoBtn" disabled onclick="openAutomateDialog()"
+                title="Listen to the songs and pick cut points and order automatically">
+          ✨ Automate
+        </button>
+        <button class="build-btn" id="buildBtn" disabled
+                onclick="buildMashup()">
+          🔨 Build Mashup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Mashup Modal -->
+  <div class="overlay" id="loadOverlay" onclick="if (event.target === this) closeLoadDialog()">
+    <div class="modal load-modal" id="loadModal"></div>
+  </div>
+
+  <!-- Automate Modal -->
+  <div class="overlay" id="autoOverlay">
+    <div class="modal auto-modal" id="autoModal"></div>
+  </div>
+
+  <!-- Edit Categories Modal -->
+  <div class="overlay" id="catOverlay" onclick="if (event.target === this) closeCatDialog()">
+    <div class="modal auto-modal" id="catModal"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Build Progress Modal -->
+  <div class="overlay" id="buildOverlay">
+    <div class="modal" id="buildModal">
+      <!-- Content set dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // ─── State ────────────────────────────────────────────────────────
+    let allSequences = [];
+    let mashupClips = [];  // { seq, start_ms, end_ms }
+    let clipIdCounter = 0;
+
+    // ─── Init ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSequences().then(loadLibrary);
+      setupTimelineDnD();
+      document.getElementById('searchBox')
+        .addEventListener('input', renderSequenceList);
+    });
+
+    async function loadSequences() {
+      try {
+        const res = await fetch('/api/sequences');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        allSequences = data.sequences;
+        renderSequenceList();
+        document.getElementById('statusBadge').textContent =
+          `${allSequences.length} sequences loaded`;
+        document.getElementById('statusBadge').style.color = 'var(--accent-green)';
+      } catch (e) {
+        document.getElementById('seqCount').textContent =
+          'Error loading sequences: ' + e.message;
+        document.getElementById('statusBadge').textContent = 'Error';
+        document.getElementById('statusBadge').style.color = 'var(--danger)';
+      }
+    }
+
+    // ─── Sequence List ────────────────────────────────────────────────
+    function renderSequenceList() {
+      const query = document.getElementById('searchBox').value
+        .toLowerCase().trim();
+      const container = document.getElementById('seqList');
+      container.innerHTML = '';
+
+      const catSel = document.getElementById('catFilter').value;
+      const filtered = allSequences.filter(s => {
+        if (catSel && !songCategories(s.path).includes(catSel)) return false;
+        if (!query) return true;
+        return s.name.toLowerCase().includes(query) ||
+               s.folder.toLowerCase().includes(query) ||
+               songCategories(s.path).some(c => c.toLowerCase().includes(query));
+      });
+
+      filtered.forEach(seq => {
+        const idx = allSequences.indexOf(seq);  // index into full list, not filtered
+        const card = document.createElement('div');
+        card.className = 'seq-card' + (seq.media_exists ? '' : ' no-media');
+        card.innerHTML = `
+          <div class="seq-folder">${escHtml(seq.folder)}</div>
+          <div class="seq-name" title="${escHtml(seq.name)}">${escHtml(seq.name)}</div>
+          <div class="seq-meta">
+            <span>⏱ ${formatTime(seq.duration_ms)}</span>
+            <span>🎨 ${seq.effect_count} effects</span>
+            <span>📦 ${seq.model_count} models</span>
+            ${seq.media_exists ? (seq.media_resolved ? '<span style="color:var(--accent-gold)">🔗 Resolved</span>' : '') : '<span style="color:var(--danger)">⚠ No media</span>'}
+          </div>
+          ${renderCatChips(seq.path)}
+          ${libraryView && libraryView.songs[seq.path]
+            ? `<button class="edit-cats" title="Change this song's categories"
+                       onclick="event.stopPropagation(); openCatDialog(${idx})">✎ tags</button>` : ''}
+          <button class="add-btn" onclick="event.stopPropagation(); addClip(${idx})">+ Add</button>
+        `;
+        if (seq.media_exists) {
+          card.draggable = true;
+          card.addEventListener('dragstart', e => {
+            dragState = { type: 'seq', seqIdx: idx };
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', seq.name);
+          });
+          card.addEventListener('dragend', endDrag);
+        }
+        container.appendChild(card);
+      });
+
+      document.getElementById('seqCount').textContent =
+        `${filtered.length} of ${allSequences.length} sequences`;
+    }
+
+    // ─── Library categories ───────────────────────────────────────────
+    let libraryView = null;      // from /api/library
+    const THEME_CATS = ['Christmas', 'Halloween', 'Faith', 'Comedy', 'Movie & Musical', 'Kids', 'Intros & Talking'];
+    const MOOD_CATS = ['Upbeat', 'Ballad / Slow', 'Bass-heavy', 'Instrumental'];
+
+    function songCategories(path) {
+      const s = libraryView && libraryView.songs[path];
+      return s ? s.categories : [];
+    }
+
+    function catClass(c) {
+      return THEME_CATS.includes(c) ? 'theme' : MOOD_CATS.includes(c) ? 'mood' : '';
+    }
+
+    function renderCatChips(path) {
+      const cats = songCategories(path);
+      if (!cats.length) return '';
+      const s = libraryView.songs[path];
+      return `<div class="seq-cats">${cats.map(c =>
+        `<span class="cat-chip ${catClass(c)}" title="${escHtml((s.reasons || {})[c] || (s.overridden ? 'set by you' : ''))}">${escHtml(c)}</span>`
+      ).join('')}</div>`;
+    }
+
+    async function loadLibrary() {
+      try {
+        const res = await fetch('/api/library');
+        setLibraryView(await res.json());
+      } catch (e) { /* categories are optional */ }
+    }
+
+    function setLibraryView(v) {
+      libraryView = v;
+      const sel = document.getElementById('catFilter');
+      const cur = sel.value;
+      if (!v.scanned) {
+        sel.innerHTML = '<option value="">All categories (library not classified yet — see 🎲 Generate)</option>';
+      } else {
+        sel.innerHTML = '<option value="">All categories</option>' +
+          v.categories.filter(c => c.count).map(c =>
+            `<option value="${escHtml(c.name)}">${escHtml(c.name)} (${c.count})</option>`).join('');
+        sel.value = cur;
+      }
+      renderSequenceList();
+    }
+
+    function openCatDialog(seqIdx) {
+      const seq = allSequences[seqIdx];
+      const s = libraryView.songs[seq.path];
+      const all = libraryView.categories.map(c => c.name);
+      document.getElementById('catModal').innerHTML = `
+        <h3>🏷 Categories</h3>
+        <p class="auto-intro" style="text-align:center"><b>${escHtml(seq.name)}</b><br>
+          ${s.bpm ? Math.round(s.bpm) + ' BPM' : ''} ${s.key ? '· ' + escHtml(s.key) : ''}
+          ${s.genre_source ? '· genre info: ' + escHtml(s.genre_source) : ''}</p>
+        <div class="cat-grid">${all.map(c => `
+          <label><input type="checkbox" value="${escHtml(c)}" ${s.categories.includes(c) ? 'checked' : ''}> ${escHtml(c)}</label>`).join('')}
+        </div>
+        <label class="auto-opt">Add your own: <input type="text" class="text-in" id="catCustom" placeholder="e.g. Disney, Party, Kids Night"></label>
+        ${Object.keys(s.reasons || {}).length ? `<div class="gen-group">Why it was tagged</div>
+          ${Object.entries(s.reasons).map(([k, v]) => `<div class="cat-why"><b>${escHtml(k)}</b>: ${escHtml(v)}</div>`).join('')}` : ''}
+        <div class="modal-actions">
+          <button class="close-btn" onclick="closeCatDialog()">Cancel</button>
+          ${s.overridden ? `<button class="close-btn" id="catResetBtn">↺ Back to automatic</button>` : ''}
+          <button class="go-btn" id="catSaveBtn">Save</button>
+        </div>`;
+      document.getElementById('catSaveBtn').onclick = () => {
+        const cats = [...document.querySelectorAll('#catModal .cat-grid input:checked')].map(i => i.value);
+        const custom = document.getElementById('catCustom').value.split(',').map(x => x.trim()).filter(Boolean);
+        saveCats(seq.path, [...new Set([...cats, ...custom])]);
+      };
+      const resetBtn = document.getElementById('catResetBtn');
+      if (resetBtn) resetBtn.onclick = () => saveCats(seq.path, null);
+      document.getElementById('catOverlay').classList.add('active');
+    }
+
+    function closeCatDialog() {
+      document.getElementById('catOverlay').classList.remove('active');
+    }
+
+    async function saveCats(path, cats) {
+      try {
+        const res = await fetch('/api/library/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // null = back to automatic (send the automatic list, server clears the override)
+          body: JSON.stringify({ path, categories: cats ?? libraryView.songs[path].auto_categories }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        setLibraryView(data);
+        closeCatDialog();
+        showToast('🏷 Categories saved');
+      } catch (e) {
+        showToast('Could not save categories: ' + e.message, 'error');
+      }
+    }
+
+    // ─── Clip Management ──────────────────────────────────────────────
+    function addClip(seqIdx, insertAt = mashupClips.length) {
+      const seq = allSequences[seqIdx];
+      if (!seq || !seq.media_exists) return;
+
+      mashupClips.splice(insertAt, 0, {
+        id: ++clipIdCounter,
+        seq: seq,
+        start_ms: 0,
+        end_ms: seq.duration_ms,
+        origin: 'user',
+      });
+      excludedPaths.delete(seq.path);   // adding it back means you want it
+
+      renderTimeline();
+      markDirty();
+    }
+
+    // Songs you removed from a generated mashup: never re-picked by 🎲 Generate
+    const excludedPaths = new Set();
+
+    // ─── Drag & Drop ──────────────────────────────────────────────────
+    let dragState = null;   // { type: 'clip', clipId } | { type: 'seq', seqIdx }
+    const dropIndicator = document.createElement('div');
+    dropIndicator.className = 'drop-indicator';
+
+    function getDropIndex(container, clientY) {
+      const cards = [...container.querySelectorAll('.clip-card')];
+      for (let i = 0; i < cards.length; i++) {
+        const r = cards[i].getBoundingClientRect();
+        if (clientY < r.top + r.height / 2) return i;
+      }
+      return cards.length;
+    }
+
+    function endDrag() {
+      dragState = null;
+      dropIndicator.remove();
+      document.getElementById('mashupTimeline').classList.remove('drag-over');
+      document.querySelectorAll('.clip-card').forEach(c => {
+        c.classList.remove('dragging');
+        c.draggable = false;
+      });
+    }
+
+    function setupTimelineDnD() {
+      const container = document.getElementById('mashupTimeline');
+
+      // Only the handle makes a card draggable, so sliders/inputs still work
+      container.addEventListener('mousedown', e => {
+        const handle = e.target.closest('.drag-handle');
+        if (handle) handle.closest('.clip-card').draggable = true;
+      });
+      document.addEventListener('mouseup', () => {
+        if (!dragState) {
+          document.querySelectorAll('.clip-card').forEach(c => c.draggable = false);
+        }
+      });
+
+      container.addEventListener('dragstart', e => {
+        const card = e.target.closest && e.target.closest('.clip-card');
+        if (!card || !card.draggable) return;
+        dragState = { type: 'clip', clipId: parseInt(card.dataset.clipId, 10) };
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        requestAnimationFrame(() => card.classList.add('dragging'));
+      });
+      container.addEventListener('dragend', endDrag);
+
+      container.addEventListener('dragover', e => {
+        if (!dragState) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = dragState.type === 'seq' ? 'copy' : 'move';
+        container.classList.add('drag-over');
+
+        const idx = getDropIndex(container, e.clientY);
+        const cards = container.querySelectorAll('.clip-card');
+        const ref = cards[idx] || null;
+        if (dropIndicator.nextSibling !== ref || dropIndicator.parentNode !== container) {
+          container.insertBefore(dropIndicator, ref);
+        }
+      });
+
+      container.addEventListener('dragleave', e => {
+        if (!container.contains(e.relatedTarget)) {
+          dropIndicator.remove();
+          container.classList.remove('drag-over');
+        }
+      });
+
+      container.addEventListener('drop', e => {
+        if (!dragState) return;
+        e.preventDefault();
+        const toIdx = getDropIndex(container, e.clientY);
+        const state = dragState;
+        endDrag();
+
+        if (state.type === 'seq') {
+          addClip(state.seqIdx, toIdx);
+        } else {
+          const fromIdx = mashupClips.findIndex(c => c.id === state.clipId);
+          if (fromIdx < 0) return;
+          let dest = toIdx > fromIdx ? toIdx - 1 : toIdx;
+          if (dest === fromIdx) return;
+          const [clip] = mashupClips.splice(fromIdx, 1);
+          mashupClips.splice(dest, 0, clip);
+          renderTimeline();
+          markDirty();
+        }
+      });
+
+      // Keyboard fallback: focus the handle and use ↑ / ↓
+      container.addEventListener('keydown', e => {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        e.preventDefault();
+        const clipId = parseInt(handle.closest('.clip-card').dataset.clipId, 10);
+        moveClip(clipId, e.key === 'ArrowUp' ? -1 : 1);
+        const again = document.querySelector(`#clip-${clipId} .drag-handle`);
+        if (again) again.focus();
+      });
+    }
+
+    // Same song again: next part of the song, inserted right after this clip
+    function duplicateClip(clipId) {
+      const idx = mashupClips.findIndex(c => c.id === clipId);
+      if (idx < 0) return;
+      const src = mashupClips[idx];
+      const dur = src.seq.duration_ms;
+      const len = src.end_ms - src.start_ms;
+      let start = src.end_ms;
+      if (start > dur - 5000) start = 0;      // ran off the end: wrap to the top
+      mashupClips.splice(idx + 1, 0, {
+        id: ++clipIdCounter,
+        seq: src.seq,
+        start_ms: start,
+        end_ms: Math.min(dur, start + len),
+        origin: src.origin,
+      });
+      renderTimeline();
+      markDirty();
+    }
+
+    function removeClip(clipId) {
+      const removed = mashupClips.find(c => c.id === clipId);
+      mashupClips = mashupClips.filter(c => c.id !== clipId);
+      if (removed && removed.origin === 'generated' &&
+          !mashupClips.some(c => c.seq.path === removed.seq.path)) {
+        excludedPaths.add(removed.seq.path);
+        showToast(`Removed “${removed.seq.name}” — 🎲 Generate won't pick it again (undo in Generate)`);
+      }
+      renderTimeline();
+      markDirty();
+    }
+
+    function moveClip(clipId, direction) {
+      const idx = mashupClips.findIndex(c => c.id === clipId);
+      if (idx < 0) return;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= mashupClips.length) return;
+      [mashupClips[idx], mashupClips[newIdx]] =
+        [mashupClips[newIdx], mashupClips[idx]];
+      renderTimeline();
+      markDirty();
+    }
+
+    function updateClipTime(clipId, field, value) {
+      const clip = mashupClips.find(c => c.id === clipId);
+      if (!clip) return;
+
+      const ms = parseTimeInput(value);
+      if (ms === null) return;
+
+      if (field === 'start') {
+        clip.start_ms = Math.max(0, Math.min(ms, clip.end_ms - 100));
+      } else {
+        clip.end_ms = Math.max(clip.start_ms + 100,
+                               Math.min(ms, clip.seq.duration_ms));
+      }
+
+      clearClipNote(clip);
+      updateClipDisplay(clipId);
+      updateTotals();
+      markDirty();
+    }
+
+    // ─── Timeline Rendering ───────────────────────────────────────────
+    // Keep a permanent reference — the element gets detached from the DOM
+    // when clips are rendered, so getElementById would return null later.
+    let emptyStateEl = null;
+
+    function renderTimeline() {
+      const container = document.getElementById('mashupTimeline');
+      if (!emptyStateEl) emptyStateEl = document.getElementById('emptyState');
+      const empty = emptyStateEl;
+
+      if (mashupClips.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(empty);
+        empty.style.display = 'flex';
+      } else {
+        empty.style.display = 'none';
+        container.innerHTML = '';
+
+        mashupClips.forEach((clip, idx) => {
+          const card = document.createElement('div');
+          card.className = 'clip-card';
+          card.id = `clip-${clip.id}`;
+          card.dataset.clipId = clip.id;
+
+          const clipDur = clip.end_ms - clip.start_ms;
+          const barLeft = (clip.start_ms / clip.seq.duration_ms * 100).toFixed(1);
+          const barWidth = (clipDur / clip.seq.duration_ms * 100).toFixed(1);
+
+          card.innerHTML = `
+            <div class="clip-header">
+              <button class="drag-handle" title="Drag to reorder (or focus and use ↑/↓)"
+                      aria-label="Reorder clip">⠿</button>
+              <div class="clip-number">${idx + 1}</div>
+              <div class="clip-title" title="${escHtml(clip.seq.name)}">
+                ${escHtml(clip.seq.name)}
+              </div>
+              <div class="clip-actions">
+                <button onclick="duplicateClip(${clip.id})"
+                        title="Use another part of this song (adds a clip right after, starting where this one ends — drag it anywhere)">⧉</button>
+                <button class="remove-btn" onclick="removeClip(${clip.id})"
+                        title="Remove">✕</button>
+              </div>
+            </div>
+            ${clip.note ? `<div class="clip-note" id="note-${clip.id}">✨ ${escHtml(clip.note)}</div>` : ''}
+            <div class="range-wrap">
+              <div class="range-slider">
+                <div class="range-track">
+                  <div class="range-fill" id="bar-${clip.id}"
+                       style="left:${barLeft}%;width:${barWidth}%"></div>
+                </div>
+                <input type="range" class="range-start" id="rs-${clip.id}"
+                       min="0" max="${clip.seq.duration_ms}" step="10"
+                       value="${clip.start_ms}" aria-label="Clip start"
+                       oninput="onSliderInput(${clip.id}, 'start', this)">
+                <input type="range" class="range-end" id="re-${clip.id}"
+                       min="0" max="${clip.seq.duration_ms}" step="10"
+                       value="${clip.end_ms}" aria-label="Clip end"
+                       oninput="onSliderInput(${clip.id}, 'end', this)">
+              </div>
+              <div class="range-scale">
+                <span>0:00</span>
+                <span class="pct" id="barlabel-${clip.id}">Using ${barWidth}% of track</span>
+                <span>${formatTime(clip.seq.duration_ms)}</span>
+              </div>
+            </div>
+            <div class="clip-controls">
+              <div class="clip-field">
+                <label>Start</label>
+                <input type="text" value="${formatTime(clip.start_ms)}"
+                       id="start-${clip.id}"
+                       onchange="updateClipTime(${clip.id}, 'start', this.value)">
+              </div>
+              <div class="clip-field">
+                <label>End</label>
+                <input type="text" value="${formatTime(clip.end_ms)}"
+                       id="end-${clip.id}"
+                       onchange="updateClipTime(${clip.id}, 'end', this.value)">
+              </div>
+              <div class="clip-field">
+                <label>Clip Duration</label>
+                <input type="text" class="readonly" readonly
+                       id="dur-${clip.id}"
+                       value="${formatTime(clipDur)}">
+              </div>
+              <div class="clip-field">
+                <label>Full Length</label>
+                <input type="text" class="readonly" readonly
+                       value="${formatTime(clip.seq.duration_ms)}">
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      updateTotals();
+    }
+
+    function updateClipDisplay(clipId) {
+      const clip = mashupClips.find(c => c.id === clipId);
+      if (!clip) return;
+
+      const clipDur = clip.end_ms - clip.start_ms;
+      const barLeft = (clip.start_ms / clip.seq.duration_ms * 100).toFixed(1);
+      const barWidth = (clipDur / clip.seq.duration_ms * 100).toFixed(1);
+
+      const startEl = document.getElementById(`start-${clipId}`);
+      const endEl = document.getElementById(`end-${clipId}`);
+      const durEl = document.getElementById(`dur-${clipId}`);
+      const barEl = document.getElementById(`bar-${clipId}`);
+      const barLbl = document.getElementById(`barlabel-${clipId}`);
+
+      if (startEl) startEl.value = formatTime(clip.start_ms);
+      if (endEl) endEl.value = formatTime(clip.end_ms);
+      if (durEl) durEl.value = formatTime(clipDur);
+      if (barEl) {
+        barEl.style.left = barLeft + '%';
+        barEl.style.width = barWidth + '%';
+      }
+      if (barLbl) barLbl.textContent = `Using ${barWidth}% of track`;
+
+      const rs = document.getElementById(`rs-${clipId}`);
+      const re = document.getElementById(`re-${clipId}`);
+      if (rs && document.activeElement !== rs) rs.value = clip.start_ms;
+      if (re && document.activeElement !== re) re.value = clip.end_ms;
+    }
+
+    // An Automate note no longer applies once the user trims the clip by hand
+    function clearClipNote(clip) {
+      if (!clip.note) return;
+      clip.note = '';
+      const el = document.getElementById(`note-${clip.id}`);
+      if (el) el.remove();
+    }
+
+    // Slider drag: update state live without re-rendering (keeps the drag alive)
+    const MIN_CLIP_MS = 100;
+    function onSliderInput(clipId, field, el) {
+      const clip = mashupClips.find(c => c.id === clipId);
+      if (!clip) return;
+      const v = parseInt(el.value, 10);
+
+      if (field === 'start') {
+        clip.start_ms = Math.max(0, Math.min(v, clip.end_ms - MIN_CLIP_MS));
+        el.value = clip.start_ms;
+      } else {
+        clip.end_ms = Math.min(clip.seq.duration_ms,
+                               Math.max(v, clip.start_ms + MIN_CLIP_MS));
+        el.value = clip.end_ms;
+      }
+
+      // Put the handle being dragged on top so overlapping handles stay grabbable
+      const rs = document.getElementById(`rs-${clipId}`);
+      const re = document.getElementById(`re-${clipId}`);
+      rs.style.zIndex = field === 'start' ? 3 : 2;
+      re.style.zIndex = field === 'end' ? 3 : 2;
+
+      clearClipNote(clip);
+      updateClipDisplay(clipId);
+      updateTotals();
+      markDirty();
+    }
+
+    function updateTotals() {
+      const crossfade = parseInt(document.getElementById('crossfadeMs').value) || 0;
+      let total = 0;
+      mashupClips.forEach(c => { total += c.end_ms - c.start_ms; });
+      if (crossfade > 0 && mashupClips.length > 1) {
+        total -= crossfade * (mashupClips.length - 1);
+      }
+      total = Math.max(0, total);
+
+      document.getElementById('clipCount').textContent = mashupClips.length;
+      document.getElementById('totalDuration').textContent = formatTime(total);
+
+      const maxMs = getMaxLengthMs();
+      const note = document.getElementById('maxNote');
+      const over = maxMs && total > maxMs;
+      note.textContent = maxMs
+        ? (over ? `  ⚠ over the ${formatShort(maxMs)} max by ${formatShort(total - maxMs)}`
+                : `  / ${formatShort(maxMs)} max`)
+        : '';
+      note.className = 'max-note' + (over ? ' over' : '');
+      document.querySelector('.total-duration').classList.toggle('over', !!over);
+      document.getElementById('buildBtn').disabled = mashupClips.length === 0;
+      document.getElementById('autoBtn').disabled = mashupClips.length === 0;
+    }
+
+    // ─── Save / Load ──────────────────────────────────────────────────
+    let isDirty = false;
+    let currentSaveId = null;   // id of the save this session was loaded from / saved as
+
+    function markDirty() {
+      isDirty = true;
+      updateSaveStatus();
+    }
+
+    function markClean(saveId) {
+      isDirty = false;
+      if (saveId !== undefined) currentSaveId = saveId;
+      updateSaveStatus();
+    }
+
+    function updateSaveStatus() {
+      const el = document.getElementById('saveStatus');
+      if (isDirty && (mashupClips.length || currentSaveId)) {
+        el.textContent = '● unsaved changes';
+        el.className = 'save-status dirty';
+      } else if (currentSaveId) {
+        el.textContent = '✓ saved';
+        el.className = 'save-status';
+      } else {
+        el.textContent = '';
+        el.className = 'save-status';
+      }
+    }
+
+    function confirmDiscard() {
+      if (!isDirty || mashupClips.length === 0) return true;
+      return confirm('You have unsaved changes to this mashup. Discard them?');
+    }
+
+    function showToast(msg, kind = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + kind;
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => { t.className = 'toast ' + kind; },
+                                    kind ? 5000 : 2500);
+    }
+
+    function safeId(name) {
+      // Must match safe_filename() in app.py
+      return name.split('').filter(c => /[A-Za-z0-9 _-]/.test(c)).join('').trim();
+    }
+
+    async function saveMashup() {
+      const name = document.getElementById('mashupName').value.trim();
+      if (!safeId(name)) {
+        showToast('Enter a mashup name before saving.', 'warn');
+        document.getElementById('mashupName').focus();
+        return;
+      }
+      if (mashupClips.length === 0) {
+        showToast('Add at least one clip before saving.', 'warn');
+        return;
+      }
+
+      const payload = {
+        name,
+        crossfade_ms: parseInt(document.getElementById('crossfadeMs').value) || 0,
+        max_length_ms: getMaxLengthMs(),
+        // Re-saving the mashup you loaded overwrites it without asking
+        overwrite: safeId(name) === currentSaveId,
+        clips: mashupClips.map(c => ({
+          xsq_path: c.seq.path,
+          seq_name: c.seq.name,
+          start_ms: c.start_ms,
+          end_ms: c.end_ms,
+          note: c.note || '',
+          origin: c.origin || 'user',
+        })),
+        excluded: [...excludedPaths],
+        normalize_audio: document.getElementById('normalizeAudio').checked,
+        fade_out_ms: getFadeOutMs(),
+      };
+
+      try {
+        let res = await fetch('/api/mashups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.status === 409) {
+          if (!confirm(`A saved mashup named "${name}" already exists. Overwrite it?`)) return;
+          payload.overwrite = true;
+          res = await fetch('/api/mashups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        }
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        markClean(data.id);
+        showToast(`💾 Saved "${name}"`);
+      } catch (e) {
+        showToast('Save failed: ' + e.message, 'error');
+      }
+    }
+
+    function newMashup() {
+      if (!confirmDiscard()) return;
+      mashupClips = [];
+      document.getElementById('mashupName').value = 'MyMashup';
+      document.getElementById('crossfadeMs').value = 0;
+      document.getElementById('maxLength').value = '';
+      document.getElementById('fadeOutOn').checked = true;
+      document.getElementById('fadeOutSec').value = 3;
+      excludedPaths.clear();
+      currentSaveId = null;
+      renderTimeline();
+      markClean();
+    }
+
+    async function openLoadDialog() {
+      const overlay = document.getElementById('loadOverlay');
+      const modal = document.getElementById('loadModal');
+      modal.innerHTML = `<h3>📂 Load Mashup</h3><div class="spinner"></div>`;
+      overlay.classList.add('active');
+
+      try {
+        const res = await fetch('/api/mashups');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        renderLoadList(data.mashups);
+      } catch (e) {
+        modal.innerHTML = `
+          <h3>📂 Load Mashup</h3>
+          <p class="error-msg">${escHtml(e.message)}</p>
+          <div style="text-align:center"><button class="close-btn" onclick="closeLoadDialog()">Close</button></div>`;
+      }
+    }
+
+    function renderLoadList(items) {
+      const modal = document.getElementById('loadModal');
+      const rows = items.map(m => `
+        <div class="load-item ${m.id === currentSaveId ? 'current' : ''}">
+          <div class="info">
+            <div class="name" title="${escHtml(m.name)}">${escHtml(m.name)}</div>
+            <div class="meta">
+              ${m.num_clips} clip${m.num_clips === 1 ? '' : 's'} ·
+              ${formatTime(m.duration_ms)} ·
+              saved ${escHtml(new Date(m.saved_at * 1000).toLocaleString())}
+            </div>
+            <div class="songs" title="${escHtml(m.clip_names.join(' → '))}">
+              ${escHtml(m.clip_names.join(' → '))}
+            </div>
+          </div>
+          <button class="load-btn" onclick="loadMashup('${escHtml(m.id)}')">Load</button>
+          <button class="del-btn" onclick="deleteMashup('${escHtml(m.id)}', this)" title="Delete">🗑</button>
+        </div>`).join('');
+
+      modal.innerHTML = `
+        <h3>📂 Load Mashup</h3>
+        <div class="load-list">
+          ${rows || '<div class="load-empty">No saved mashups yet. Build one and hit 💾 Save.</div>'}
+        </div>
+        <div style="text-align:center"><button class="close-btn" onclick="closeLoadDialog()">Close</button></div>`;
+    }
+
+    function closeLoadDialog() {
+      document.getElementById('loadOverlay').classList.remove('active');
+    }
+
+    async function loadMashup(id) {
+      if (!confirmDiscard()) return;
+      if (allSequences.length === 0) {
+        showToast('Sequences are still loading — try again in a moment.', 'warn');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/mashups/' + encodeURIComponent(id));
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const proj = data.mashup;
+
+        const byPath = new Map(allSequences.map(s => [s.path, s]));
+        const missing = [];
+        const clips = [];
+        (proj.clips || []).forEach(c => {
+          const seq = byPath.get(c.xsq_path);
+          if (!seq || !seq.media_exists) {
+            missing.push(c.seq_name || c.xsq_path);
+            return;
+          }
+          // Clamp in case the sequence length changed since saving
+          const end = Math.min(c.end_ms, seq.duration_ms);
+          const start = Math.max(0, Math.min(c.start_ms, end - MIN_CLIP_MS));
+          clips.push({ id: ++clipIdCounter, seq, start_ms: start, end_ms: end,
+                       note: c.note || '', origin: c.origin || 'user' });
+        });
+
+        mashupClips = clips;
+        document.getElementById('mashupName').value = proj.name || id;
+        document.getElementById('crossfadeMs').value = proj.crossfade_ms || 0;
+        document.getElementById('maxLength').value =
+          proj.max_length_ms ? formatShort(proj.max_length_ms) : '';
+        document.getElementById('normalizeAudio').checked = proj.normalize_audio !== false;
+        // older saves had no fade setting: default to the 3 s fade
+        const fo = proj.fade_out_ms === undefined ? 3000 : proj.fade_out_ms;
+        document.getElementById('fadeOutOn').checked = fo > 0;
+        if (fo > 0) document.getElementById('fadeOutSec').value = fo / 1000;
+        excludedPaths.clear();
+        (proj.excluded || []).forEach(p => excludedPaths.add(p));
+        renderTimeline();
+        closeLoadDialog();
+
+        if (missing.length) {
+          // Leave it marked unsaved so the user knows the loaded version differs
+          currentSaveId = id;
+          markDirty();
+          showToast(`⚠ Loaded, but ${missing.length} clip(s) couldn't be found: ` +
+                    missing.join(', '), 'warn');
+        } else {
+          markClean(id);
+          showToast(`📂 Loaded "${proj.name || id}"`);
+        }
+      } catch (e) {
+        showToast('Load failed: ' + e.message, 'error');
+      }
+    }
+
+    async function deleteMashup(id, btn) {
+      if (!confirm(`Delete saved mashup "${id}"? This can't be undone.`)) return;
+      try {
+        const res = await fetch('/api/mashups/' + encodeURIComponent(id), { method: 'DELETE' });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        btn.closest('.load-item').remove();
+        if (id === currentSaveId) {
+          currentSaveId = null;
+          markDirty();
+        }
+        if (!document.querySelector('.load-item')) {
+          document.querySelector('.load-list').innerHTML =
+            '<div class="load-empty">No saved mashups yet. Build one and hit 💾 Save.</div>';
+        }
+      } catch (e) {
+        showToast('Delete failed: ' + e.message, 'error');
+      }
+    }
+
+    // Ctrl+S to save, Esc to close the load dialog
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveMashup();
+      } else if (e.key === 'Escape') {
+        closeLoadDialog();
+        closeAutomateDialog();
+      }
+    });
+
+    // Warn before closing/refreshing with unsaved work
+    window.addEventListener('beforeunload', e => {
+      if (isDirty && mashupClips.length) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    document.getElementById('mashupName').addEventListener('input', markDirty);
+    document.getElementById('crossfadeMs').addEventListener('input', markDirty);
+    document.getElementById('maxLength').addEventListener('input', () => { markDirty(); updateTotals(); });
+    document.getElementById('maxLength').addEventListener('change', e => {
+      // tidy the display, e.g. "5" -> "5:00"
+      const ms = getMaxLengthMs();
+      if (ms) e.target.value = formatShort(ms);
+      else if (e.target.value.trim()) {
+        showToast('Max length should look like 5:00 (or 5 for five minutes).', 'warn');
+      }
+      updateTotals();
+    });
+
+    // ─── Automate ─────────────────────────────────────────────────────
+    let autoPoll = null;      // active polling timer
+    let autoPlan = null;      // last plan returned by the server
+    const autoPrefs = { target_s: 30, order_mode: 'best', allow_reuse: true,
+                        online: true, auto_xfade: true };
+    try { Object.assign(autoPrefs, JSON.parse(localStorage.getItem('autoPrefs') || '{}')); } catch (e) {}
+    // older saved prefs had a reorder checkbox instead of order_mode
+    if (!['best', 'scramble', 'keep'].includes(autoPrefs.order_mode)) {
+      autoPrefs.order_mode = autoPrefs.allow_reorder === false ? 'keep' : 'best';
+    }
+
+    function openAutomateDialog() {
+      if (mashupClips.length === 0) return;
+      const modal = document.getElementById('autoModal');
+      const nSongs = new Set(mashupClips.map(c => c.seq.path)).size;
+      const n = nSongs;
+      modal.innerHTML = `
+        <h3>✨ Automate Mashup</h3>
+        <p class="auto-intro">
+          I'll listen to ${n === 1 ? 'this song' : `these ${n} songs`} and read their lyrics
+          (from each sequence's own lyric track, or online if it has none) to find the
+          chorus and the natural phrase endings. Cuts land on bar lines and never in the
+          middle of a sung line${n > 1 ? ', and the order is chosen so tempos, keys and energy flow into each other' : ''}.
+          You'll see the plan before anything changes.
+        </p>
+        <label class="auto-opt">
+          Length per song
+          <input type="range" id="autoTarget" min="10" max="90" step="5" value="${autoPrefs.target_s}"
+                 oninput="document.getElementById('autoTargetVal').textContent = this.value + 's'">
+          <span class="val" id="autoTargetVal">${autoPrefs.target_s}s</span>
+        </label>
+        <label class="auto-opt">
+          Max mashup length
+          <input type="text" id="autoMax" value="${escHtml(document.getElementById('maxLength').value)}"
+                 placeholder="none" style="width:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;">
+          <small>e.g. 5:00 — clips get shorter (or songs dropped) to fit</small>
+        </label>
+        <div ${n < 2 && mashupClips.length < 2 ? 'style="display:none"' : ''}>
+          <div class="gen-group">Running order</div>
+          ${[
+            ['best', '🎯 Best flow', 'order picked so beats, tempo, key and energy flow into each other'],
+            ['scramble', '🔀 Scramble', 'random order, different every time — cuts are still chosen musically'],
+            ['keep', '📌 Keep my order', 'just pick the cut points'],
+          ].map(([v, label, hint]) => `
+            <label class="auto-opt" style="margin-bottom:6px">
+              <input type="radio" name="autoOrder" value="${v}" ${autoPrefs.order_mode === v ? 'checked' : ''}
+                     onchange="document.getElementById('autoReuse').disabled = this.value !== 'best'">
+              <b>${label}</b> <small>${hint}</small>
+            </label>`).join('')}
+        </div>
+        <label class="auto-opt" ${nSongs < 2 ? 'style="display:none"' : ''}>
+          <input type="checkbox" id="autoReuse" ${autoPrefs.allow_reuse ? 'checked' : ''}
+                 ${autoPrefs.order_mode === 'best' ? '' : 'disabled'}>
+          Let songs come back <small>(e.g. open and close on the same song, or revisit a chorus — never repeats the same part)</small>
+        </label>
+        <label class="auto-opt">
+          <input type="checkbox" id="autoOnline" ${autoPrefs.online ? 'checked' : ''}>
+          Look up lyrics online for sequences without a lyric track <small>(LRCLIB)</small>
+        </label>
+        <label class="auto-opt">
+          <input type="checkbox" id="autoXfade" ${autoPrefs.auto_xfade ? 'checked' : ''}>
+          Pick the crossfade length for me <small>(otherwise uses your ${parseInt(document.getElementById('crossfadeMs').value) || 0} ms)</small>
+        </label>
+        <div class="modal-actions">
+          <button class="close-btn" onclick="closeAutomateDialog()">Cancel</button>
+          <button class="go-btn" onclick="runAutomate()">✨ Analyze</button>
+        </div>`;
+      document.getElementById('autoOverlay').classList.add('active');
+    }
+
+    function closeAutomateDialog() {
+      clearTimeout(autoPoll);
+      autoPoll = null;
+      document.getElementById('autoOverlay').classList.remove('active');
+    }
+
+    async function runAutomate() {
+      // Read the form if it's showing; a re-run from the preview
+      // ("Scramble again") reuses the last settings
+      if (document.getElementById('autoTarget')) {
+        autoPrefs.target_s = parseInt(document.getElementById('autoTarget').value);
+        const orderEl = document.querySelector('input[name="autoOrder"]:checked');
+        autoPrefs.order_mode = orderEl ? orderEl.value : 'best';
+        autoPrefs.allow_reuse = document.getElementById('autoReuse').checked;
+        autoPrefs.online = document.getElementById('autoOnline').checked;
+        autoPrefs.auto_xfade = document.getElementById('autoXfade').checked;
+
+        // The dialog's max length is the same setting as the header field
+        const maxInput = document.getElementById('maxLength');
+        maxInput.value = document.getElementById('autoMax').value.trim();
+        if (maxInput.value && !getMaxLengthMs()) {
+          showToast('Max length should look like 5:00 (or 5 for five minutes).', 'warn');
+          return;
+        }
+        if (getMaxLengthMs()) maxInput.value = formatShort(getMaxLengthMs());
+        updateTotals();
+      }
+      const maxMs = getMaxLengthMs();
+      try { localStorage.setItem('autoPrefs', JSON.stringify(autoPrefs)); } catch (e) {}
+
+      const modal = document.getElementById('autoModal');
+      modal.innerHTML = `
+        <h3>✨ Analyzing…</h3>
+        <div class="spinner"></div>
+        <div class="progress-bar"><div class="progress-fill" id="autoFill"></div></div>
+        <p id="autoMsg" style="font-size:13px;text-align:center;">Starting…</p>
+        <p style="font-size:11px;text-align:center;">The first run for each song takes a few seconds; after that it's cached.</p>
+        <div class="modal-actions"><button class="close-btn" onclick="closeAutomateDialog()">Cancel</button></div>`;
+
+      const payload = {
+        target_s: autoPrefs.target_s,
+        order_mode: autoPrefs.order_mode,
+        allow_reorder: autoPrefs.order_mode !== 'keep',
+        allow_reuse: autoPrefs.allow_reuse,
+        max_total_s: maxMs ? maxMs / 1000 : null,
+        online: autoPrefs.online,
+        crossfade_ms: autoPrefs.auto_xfade || mashupClips.length < 2
+          ? null : (parseInt(document.getElementById('crossfadeMs').value) || 0),
+        clips: mashupClips.map(c => ({ xsq_path: c.seq.path })),
+      };
+      // Remember exactly which clips were analysed so Apply maps back correctly
+      const snapshot = mashupClips.slice();
+
+      try {
+        const res = await fetch('/api/automate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        pollJob(data.job_id, plan => {
+          autoPlan = { plan, snapshot, mode: 'automate' };
+          showAutomatePlan();
+        });
+      } catch (e) {
+        showAutomateError(e.message);
+      }
+    }
+
+    function pollJob(jobId, onDone) {
+      autoPoll = setTimeout(async () => {
+        if (!autoPoll) return;      // cancelled
+        try {
+          const res = await fetch('/api/jobs/' + jobId);
+          const job = await res.json();
+          if (!autoPoll) return;
+          if (job.error && job.status !== 'running') throw new Error(job.error);
+          const fill = document.getElementById('autoFill');
+          const msg = document.getElementById('autoMsg');
+          if (fill) fill.style.width = Math.round(job.progress * 100) + '%';
+          if (msg) msg.textContent = job.message;
+          if (job.status === 'done') {
+            autoPoll = null;
+            onDone(job.result);
+          } else {
+            pollJob(jobId, onDone);
+          }
+        } catch (e) {
+          autoPoll = null;
+          showAutomateError(e.message);
+        }
+      }, 600);
+    }
+
+    function showAutomateError(msg) {
+      document.getElementById('autoModal').innerHTML = `
+        <h3>❌ Automate failed</h3>
+        <p class="error-msg" style="text-align:center">${escHtml(msg)}</p>
+        <div class="modal-actions"><button class="close-btn" onclick="closeAutomateDialog()">Close</button></div>`;
+    }
+
+    function showAutomatePlan() {
+      const { plan } = autoPlan;
+      const rows = [];
+      let total = 0;
+      plan.clips.forEach((c, k) => {
+        const dur = c.end_ms - c.start_ms;
+        total += dur;
+        rows.push(`
+          <div class="plan-clip">
+            <div class="top">
+              <span class="num">${k + 1}</span>
+              <span class="nm" title="${escHtml(c.name)}">${escHtml(c.name)}</span>
+              <span class="tm">${formatTime(c.start_ms)} → ${formatTime(c.end_ms)} (${(dur / 1000).toFixed(1)}s)</span>
+            </div>
+            <div class="why">${escHtml(c.note)}${c.clean_cuts ? '' : ' · <span style="color:var(--accent-gold)">⚠ cut overlaps a sung word</span>'}</div>
+            <div class="src">${c.bpm} BPM · ${escHtml(c.key || '?')} (${escHtml(c.camelot || '?')}) ·
+              lyrics: ${escHtml(c.lyrics_source || '—')} · beats: ${escHtml(c.beat_source || '—')}</div>
+          </div>`);
+        const t = plan.transitions[k];
+        if (t) rows.push(`<div class="plan-trans">↓ <span class="${t.verdict}">${t.verdict}</span> · ${escHtml(t.text)}</div>`);
+      });
+      if (plan.clips.length > 1) total -= plan.crossfade_ms * (plan.clips.length - 1);
+
+      const warns = [];
+      if (plan.target_shrunk) {
+        warns.push(`Clips shortened to about ${plan.target_used_s}s each to fit the ${formatShort(plan.max_ms)} maximum.`);
+      }
+      if (plan.dropped && plan.dropped.length) {
+        warns.push(`Didn't fit and was left out: ${plan.dropped.map(escHtml).join(', ')}. ` +
+                   `Raise the max length or remove a song.`);
+      }
+
+      const isGen = autoPlan.mode === 'generate';
+      document.getElementById('autoModal').innerHTML = `
+        <h3>${isGen ? '🎲 Generated Mashup' : '✨ Suggested Mashup'}</h3>
+        <p class="plan-summary">
+          ${plan.clips.length} clip${plan.clips.length === 1 ? '' : 's'} · about ${formatTime(Math.max(0, total))}
+          ${plan.max_ms ? ` of ${formatShort(plan.max_ms)} max` : ''}
+          ${plan.clips.length > 1 ? `· crossfade ${plan.crossfade_ms} ms${plan.crossfade_auto ? ' (≈ 2 beats)' : ''}` : ''}
+          ${plan.order_mode === 'scramble'
+            ? '· <span style="color:var(--accent-gold)">🔀 scrambled order</span>'
+            : plan.reordered ? '· <span style="color:var(--accent-gold)">🎯 order picked for best flow</span>' : ''}
+          ${plan.revisits ? `· <span style="color:var(--accent-purple)">${plan.revisits} return visit${plan.revisits === 1 ? '' : 's'}</span>` : ''}
+        </p>
+        ${warns.map(w => `<p class="plan-summary" style="color:var(--accent-gold)">⚠ ${w}</p>`).join('')}
+        ${isGen ? `
+          <div class="gen-group">Songs picked (${plan.picked.length})</div>
+          <div style="max-height:18vh;overflow-y:auto;margin-bottom:6px">
+            ${plan.picked.map(p => `<div class="picked-row">${p.pinned ? '📌' : '🎲'} ${escHtml(p.name)}
+              <span class="cats">· ${p.bpm} BPM · ${escHtml(p.categories.join(', '))}</span></div>`).join('')}
+          </div>
+          ${plan.pick_info && plan.pick_info.short_by ? `<p class="plan-summary" style="color:var(--accent-gold)">⚠ Only ${plan.pick_info.pool_size} more song(s) match — asked for ${plan.pick_info.pool_size + plan.pick_info.short_by}.</p>` : ''}
+          <div class="gen-group">Running order</div>` : ''}
+        <div class="plan-list">${rows.join('')}</div>
+        <div class="modal-actions">
+          <button class="close-btn" onclick="closeAutomateDialog()">Cancel</button>
+          <button class="close-btn" onclick="${isGen ? 'openGenerateDialog()' : 'openAutomateDialog()'}">⚙ Change options</button>
+          ${isGen ? '<button class="close-btn" onclick="runGenerate()">🎲 Generate another</button>' : ''}
+          ${!isGen && plan.order_mode === 'scramble' ? '<button class="close-btn" onclick="runAutomate()">🔀 Scramble again</button>' : ''}
+          <button class="go-btn" onclick="applyAutomatePlan()">✓ Apply to timeline</button>
+        </div>`;
+    }
+
+    function applyAutomatePlan() {
+      const { plan, snapshot, mode } = autoPlan;
+      const byPath = new Map(allSequences.map(s => [s.path, s]));
+      const pinned = new Set((plan.picked || []).filter(p => p.pinned).map(p => p.xsq_path));
+      const originOf = path => {
+        if (mode === 'generate') return pinned.has(path) ? 'user' : 'generated';
+        // Automate keeps whatever the clips of that song were before
+        const prev = (snapshot || []).filter(c => c.seq.path === path);
+        return prev.length && prev.every(c => c.origin === 'generated') ? 'generated' : 'user';
+      };
+      mashupClips = plan.clips.filter(pc => byPath.has(pc.xsq_path)).map(pc => {
+        const seq = byPath.get(pc.xsq_path);
+        return {
+          id: ++clipIdCounter,
+          seq,
+          start_ms: Math.max(0, Math.min(pc.start_ms, seq.duration_ms - MIN_CLIP_MS)),
+          end_ms: Math.min(pc.end_ms, seq.duration_ms),
+          note: pc.note,
+          origin: originOf(pc.xsq_path),
+        };
+      });
+      if (plan.clips.length > 1) {
+        document.getElementById('crossfadeMs').value = plan.crossfade_ms;
+      }
+      renderTimeline();
+      markDirty();
+      closeAutomateDialog();
+      showToast('✨ Applied — fine-tune any clip with its slider');
+    }
+
+    // ─── Generate (pick songs by category) ────────────────────────────
+    const genPrefs = { categories: [], match_all: true, count: 6, target_s: 25,
+                       allow_reuse: true, online: true };
+    try { Object.assign(genPrefs, JSON.parse(localStorage.getItem('genPrefs') || '{}')); } catch (e) {}
+
+    function pinnedPaths() {
+      return [...new Set(mashupClips.filter(c => c.origin !== 'generated').map(c => c.seq.path))];
+    }
+
+    function openGenerateDialog() {
+      const modal = document.getElementById('autoModal');
+      document.getElementById('autoOverlay').classList.add('active');
+      if (!libraryView || !libraryView.scanned) {
+        modal.innerHTML = `
+          <h3>🎲 Generate a Mashup</h3>
+          <p class="auto-intro">
+            First I need to get to know your library. I'll listen to all ${allSequences.length} songs and
+            read their lyrics, then sort them into categories — <b>themes</b> from the lyrics
+            (Christmas, Halloween, Faith, Comedy…), <b>genres</b> (Pop, Rock, Country…) looked up on
+            MusicBrainz, and <b>moods</b> from the audio (Upbeat, Ballad, Bass-heavy, Instrumental).
+            This happens once — a few minutes the first time; later only new or changed songs are checked.
+          </p>
+          <label class="auto-opt"><input type="checkbox" id="scanOnline" ${genPrefs.online ? 'checked' : ''}>
+            Look up genres and missing lyrics online <small>(MusicBrainz, LRCLIB — about 1 song per 2 seconds)</small></label>
+          <div class="modal-actions">
+            <button class="close-btn" onclick="closeAutomateDialog()">Cancel</button>
+            <button class="go-btn" onclick="runLibraryScan()">🏷 Classify my library</button>
+          </div>`;
+        return;
+      }
+
+      const cats = libraryView.categories;
+      const group = (title, names) => {
+        const items = cats.filter(c => names === null
+          ? ![...THEME_CATS, ...MOOD_CATS, ...GENRE_CATS].includes(c.name)
+          : names.includes(c.name));
+        if (!items.length) return '';
+        return `<div class="gen-group">${title}</div><div class="gen-cats">${items.map(c => `
+          <button class="gen-cat ${genPrefs.categories.includes(c.name) ? 'on' : ''}" data-cat="${escHtml(c.name)}"
+                  ${c.count ? '' : 'disabled'} onclick="this.classList.toggle('on'); updateGenMatchCount()">
+            ${escHtml(c.name)}<span class="n">${c.count}</span></button>`).join('')}</div>`;
+      };
+      const pins = pinnedPaths();
+      const nameOf = p => (allSequences.find(s => s.path === p) || { name: p }).name;
+
+      modal.innerHTML = `
+        <h3>🎲 Generate a Mashup</h3>
+        <p class="auto-intro">Pick what kind of mashup you want. I'll choose songs that fit and that work
+          together (tempo, key, bass, loudness), then cut and order them like ✨ Automate.
+          Every generation is different.</p>
+        ${group('Theme', THEME_CATS)}${group('Genre', GENRE_CATS)}${group('Mood', MOOD_CATS)}${group('Your own', null)}
+        <div class="auto-opt">
+          <label><input type="radio" name="genMatch" value="all" ${genPrefs.match_all ? 'checked' : ''} onchange="updateGenMatchCount()"> Songs must have <b>all</b> selected</label>
+          <label><input type="radio" name="genMatch" value="any" ${genPrefs.match_all ? '' : 'checked'} onchange="updateGenMatchCount()"> <b>any</b> selected</label>
+          <small id="genMatchCount"></small>
+        </div>
+        <label class="auto-opt">Number of songs
+          <input type="range" id="genCount" min="2" max="15" value="${genPrefs.count}"
+                 oninput="document.getElementById('genCountVal').textContent = this.value">
+          <span class="val" id="genCountVal">${genPrefs.count}</span></label>
+        <label class="auto-opt">Length per song
+          <input type="range" id="genTarget" min="10" max="90" step="5" value="${genPrefs.target_s}"
+                 oninput="document.getElementById('genTargetVal').textContent = this.value + 's'">
+          <span class="val" id="genTargetVal">${genPrefs.target_s}s</span></label>
+        <label class="auto-opt">Max mashup length
+          <input type="text" class="text-in" id="genMax" style="width:80px" placeholder="none"
+                 value="${escHtml(document.getElementById('maxLength').value)}">
+          <small>e.g. 5:00</small></label>
+        <label class="auto-opt"><input type="checkbox" id="genReuse" ${genPrefs.allow_reuse ? 'checked' : ''}>
+          Let songs come back <small>(e.g. open and close on the same song)</small></label>
+        ${pins.length ? `<div class="gen-list">📌 <b>Always included</b> (songs you added yourself):
+          ${pins.map(p => `<span class="pill">${escHtml(nameOf(p))} </span>`).join('')}</div>` : ''}
+        ${excludedPaths.size ? `<div class="gen-list">🚫 <b>Won't be picked</b> (you removed them):
+          ${[...excludedPaths].map((p, i) => `<span class="pill">${escHtml(nameOf(p))}<button title="Allow again" data-unexclude="${i}">✕</button></span>`).join('')}
+          <a href="#" onclick="excludedPaths.clear(); openGenerateDialog(); return false;" style="color:var(--accent-blue)">clear all</a></div>` : ''}
+        <div class="modal-actions">
+          <button class="close-btn" onclick="closeAutomateDialog()">Cancel</button>
+          <button class="close-btn" onclick="runLibraryScan()" title="Re-check new or changed songs">🏷 Re-scan library</button>
+          <button class="go-btn" onclick="runGenerate()">🎲 Generate</button>
+        </div>`;
+      const exList = [...excludedPaths];
+      modal.querySelectorAll('[data-unexclude]').forEach(b => {
+        b.onclick = () => { excludedPaths.delete(exList[+b.dataset.unexclude]); openGenerateDialog(); };
+      });
+      updateGenMatchCount();
+    }
+
+    const GENRE_CATS = ['Pop', 'Rock', 'Country', 'Dance', 'Hip-Hop & R&B', 'Jazz & Classics', 'Orchestral', 'A Cappella'];
+
+    function selectedGenCats() {
+      return [...document.querySelectorAll('#autoModal .gen-cat.on')].map(b => b.dataset.cat);
+    }
+
+    function updateGenMatchCount() {
+      const el = document.getElementById('genMatchCount');
+      if (!el) return;
+      const cats = selectedGenCats();
+      const all = document.querySelector('input[name="genMatch"]:checked').value === 'all';
+      const n = Object.entries(libraryView.songs).filter(([p, s]) => {
+        if (excludedPaths.has(p)) return false;
+        if (!cats.length) return !s.categories.includes('Intros & Talking');
+        return all ? cats.every(c => s.categories.includes(c)) : cats.some(c => s.categories.includes(c));
+      }).length;
+      el.textContent = `→ ${n} song${n === 1 ? '' : 's'} match`;
+    }
+
+    async function runLibraryScan() {
+      const onlineEl = document.getElementById('scanOnline');
+      if (onlineEl) genPrefs.online = onlineEl.checked;
+      const modal = document.getElementById('autoModal');
+      modal.innerHTML = `
+        <h3>🏷 Classifying your library…</h3>
+        <div class="spinner"></div>
+        <div class="progress-bar"><div class="progress-fill" id="autoFill"></div></div>
+        <p id="autoMsg" style="font-size:13px;text-align:center;">Starting…</p>
+        <p style="font-size:11px;text-align:center;">You can close this — it keeps running, and finished songs are saved.</p>
+        <div class="modal-actions"><button class="close-btn" onclick="closeAutomateDialog()">Close</button></div>`;
+      try {
+        const res = await fetch('/api/library/scan', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ online: genPrefs.online }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        pollJob(data.job_id, view => {
+          setLibraryView(view);
+          showToast(`🏷 Library classified — ${Object.keys(view.songs).length} songs`);
+          openGenerateDialog();
+        });
+      } catch (e) {
+        showAutomateError(e.message);
+      }
+    }
+
+    async function runGenerate() {
+      // Read the form if it's showing; otherwise ("Generate another") reuse the last settings
+      if (document.getElementById('genCount')) {
+        genPrefs.categories = selectedGenCats();
+        genPrefs.match_all = document.querySelector('input[name="genMatch"]:checked').value === 'all';
+        genPrefs.count = parseInt(document.getElementById('genCount').value);
+        genPrefs.target_s = parseInt(document.getElementById('genTarget').value);
+        genPrefs.allow_reuse = document.getElementById('genReuse').checked;
+        const maxInput = document.getElementById('maxLength');
+        maxInput.value = document.getElementById('genMax').value.trim();
+        if (maxInput.value && !getMaxLengthMs()) {
+          showToast('Max length should look like 5:00 (or 5 for five minutes).', 'warn');
+          return;
+        }
+        if (getMaxLengthMs()) maxInput.value = formatShort(getMaxLengthMs());
+        updateTotals();
+      }
+      try { localStorage.setItem('genPrefs', JSON.stringify(genPrefs)); } catch (e) {}
+
+      const maxMs = getMaxLengthMs();
+      const modal = document.getElementById('autoModal');
+      modal.innerHTML = `
+        <h3>🎲 Generating…</h3>
+        <div class="spinner"></div>
+        <div class="progress-bar"><div class="progress-fill" id="autoFill"></div></div>
+        <p id="autoMsg" style="font-size:13px;text-align:center;">Picking songs…</p>
+        <div class="modal-actions"><button class="close-btn" onclick="closeAutomateDialog()">Cancel</button></div>`;
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            categories: genPrefs.categories,
+            match_all: genPrefs.match_all,
+            count: genPrefs.count,
+            pinned: pinnedPaths(),
+            excluded: [...excludedPaths],
+            target_s: genPrefs.target_s,
+            max_total_s: maxMs ? maxMs / 1000 : null,
+            allow_reuse: genPrefs.allow_reuse,
+            online: genPrefs.online,
+            crossfade_ms: null,
+          }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const snapshot = mashupClips.slice();
+        pollJob(data.job_id, plan => {
+          autoPlan = { plan, snapshot, mode: 'generate' };
+          showAutomatePlan();
+        });
+      } catch (e) {
+        showAutomateError(e.message);
+      }
+    }
+
+    // ─── Build Mashup ─────────────────────────────────────────────────
+    async function buildMashup() {
+      if (mashupClips.length === 0) return;
+
+      const mashupName = document.getElementById('mashupName').value.trim()
+        || 'mashup';
+      const crossfade = parseInt(document.getElementById('crossfadeMs').value) || 0;
+
+      // Show progress modal
+      const overlay = document.getElementById('buildOverlay');
+      const modal = document.getElementById('buildModal');
+      modal.innerHTML = `
+        <h3>🔨 Building Mashup</h3>
+        <p>Processing ${mashupClips.length} clips...</p>
+        <div class="spinner"></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p id="progressText" style="font-size:12px;">Starting...</p>
+      `;
+      overlay.classList.add('active');
+
+      const payload = {
+        name: mashupName,
+        crossfade_ms: crossfade,
+        normalize_audio: document.getElementById('normalizeAudio').checked,
+        fade_out_ms: getFadeOutMs(),
+        clips: mashupClips.map(c => ({
+          xsq_path: c.seq.path,
+          start_ms: c.start_ms,
+          end_ms: c.end_ms,
+        })),
+      };
+
+      try {
+        // Animate progress
+        const fill = document.getElementById('progressFill');
+        const txt = document.getElementById('progressText');
+        fill.style.width = '30%';
+        txt.textContent = 'Cutting audio segments...';
+
+        const res = await fetch('/api/build_mashup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        fill.style.width = '90%';
+        txt.textContent = 'Finalizing...';
+
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        fill.style.width = '100%';
+
+        // Show success
+        const r = data.result;
+        modal.innerHTML = `
+          <h3>✅ Mashup Complete!</h3>
+          <p style="color:var(--accent-green);font-weight:600;">
+            ${r.num_clips} clips merged · Duration: ${formatTime(r.duration_ms)}
+          </p>
+          ${r.normalized ? `<p style="font-size:12px;">🔊 Loudness evened out to −16 LUFS
+            (per clip: ${(r.gains_db || []).map(g => g == null ? '—' : (g > 0 ? '+' : '') + g + ' dB').join(', ')})</p>` : ''}
+          ${r.fade_out_ms ? `<p style="font-size:12px;">🌅 Music and lights fade out over the last
+            ${(r.fade_out_ms / 1000).toFixed(1)}s (${r.effects_faded} effect${r.effects_faded === 1 ? '' : 's'} given a Fade Out)</p>` : ''}
+          ${r.videos_retimed ? `<p style="font-size:12px;">🎞 ${r.videos_retimed} video effect${r.videos_retimed === 1 ? '' : 's'}
+            re-timed so the picture stays in sync where clips cut into them${(r.video_notes || []).length ? ' (' + r.video_notes.map(escHtml).join('; ') + ')' : ''}</p>` : ''}
+          <div class="result-section">
+            <a class="download-link" href="/api/download_all/${encodeURIComponent(r.download_zip)}">
+              📦 Download all (.zip)
+            </a>
+          </div>
+          <p style="font-size:12px;margin-top:16px;color:var(--text-dim);">
+            Also saved in the app folder: ${escHtml(r.xsq_rel || r.xsq_path || '')}
+          </p>
+          <p style="font-size:12px;color:var(--text-dim);">
+            The zip holds a folder with the .xsq and .mp3 — unzip it into your Sequences directory,
+            then open the .xsq in xLights. You may need to update the
+            media path and re-render.
+          </p>
+          <button class="close-btn" onclick="closeBuildModal()">Close</button>
+        `;
+
+      } catch (e) {
+        modal.innerHTML = `
+          <h3>❌ Build Failed</h3>
+          <p class="error-msg">${escHtml(e.message)}</p>
+          <button class="close-btn" onclick="closeBuildModal()">Close</button>
+        `;
+      }
+    }
+
+    function closeBuildModal() {
+      document.getElementById('buildOverlay').classList.remove('active');
+    }
+
+    // ─── Utilities ────────────────────────────────────────────────────
+    function formatTime(ms) {
+      if (ms == null || isNaN(ms)) return '0:00.000';
+      const totalSec = Math.floor(ms / 1000);
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      const millis = Math.round(ms % 1000);
+      return `${mins}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+    }
+
+    function parseTimeInput(str) {
+      // Accept formats: "1:23.456", "83.456", "83456" (ms), "1:23"
+      str = str.trim();
+
+      // MM:SS.mmm or M:SS.mmm
+      let m = str.match(/^(\d+):(\d{1,2})\.(\d{1,3})$/);
+      if (m) {
+        return parseInt(m[1]) * 60000 + parseInt(m[2]) * 1000 +
+               parseInt(m[3].padEnd(3, '0'));
+      }
+
+      // MM:SS or M:SS
+      m = str.match(/^(\d+):(\d{1,2})$/);
+      if (m) {
+        return parseInt(m[1]) * 60000 + parseInt(m[2]) * 1000;
+      }
+
+      // SS.mmm (seconds with decimal)
+      m = str.match(/^(\d+)\.(\d{1,3})$/);
+      if (m) {
+        return parseInt(m[1]) * 1000 + parseInt(m[2].padEnd(3, '0'));
+      }
+
+      // Plain number: interpret as milliseconds if > 999, else seconds
+      m = str.match(/^(\d+)$/);
+      if (m) {
+        const val = parseInt(m[1]);
+        return val > 999 ? val : val * 1000;
+      }
+
+      return null;
+    }
+
+    function getFadeOutMs() {
+      if (!document.getElementById('fadeOutOn').checked) return 0;
+      const s = parseFloat(document.getElementById('fadeOutSec').value);
+      return isFinite(s) && s > 0 ? Math.round(Math.min(15, s) * 1000) : 0;
+    }
+
+    // Max mashup length: "5:00", "4:30", or a bare number of minutes ("5")
+    function getMaxLengthMs() {
+      const raw = document.getElementById('maxLength').value.trim();
+      if (!raw) return null;
+      if (/^\d+(\.\d+)?$/.test(raw) && parseFloat(raw) <= 60) {
+        return Math.round(parseFloat(raw) * 60000);
+      }
+      const ms = parseTimeInput(raw);
+      return ms && ms >= 10000 ? ms : null;
+    }
+
+    function formatShort(ms) {
+      const s = Math.round(ms / 1000);
+      return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      // Also escape quotes so names are safe inside title="..." attributes
+      return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Update totals when crossfade changes
+    document.getElementById('crossfadeMs')
+      .addEventListener('input', updateTotals);
+  </script>
+</body>
+</html>

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mashup Builder Help</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --bg-card: #1a1a2e;
+      --bg-soft: #14142a;
+      --border: #2a2a4a;
+      --text: #dcdcee;
+      --text-dim: #8f8fb0;
+      --text-bright: #ffffff;
+      --red: #ff4466;
+      --green: #44ff88;
+      --blue: #4488ff;
+      --gold: #ffcc44;
+      --purple: #aa66ff;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15.5px;
+    }
+    a { color: #7fb0ff; }
+    a:hover { color: #a8c8ff; }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: linear-gradient(135deg, #1a0a2e 0%, #0f1a2e 50%, #0a2e1a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .topbar h1 {
+      font-size: 20px;
+      background: linear-gradient(90deg, var(--red), var(--green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .topbar .back {
+      margin-left: auto;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 14px;
+      background: var(--bg-soft);
+    }
+    .topbar .back:hover { border-color: var(--blue); color: var(--text-bright); }
+
+    /* ── Layout ── */
+    .layout { display: flex; max-width: 1280px; margin: 0 auto; }
+    nav.toc {
+      width: 250px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 24px 12px 24px 20px;
+      border-right: 1px solid var(--border);
+    }
+    nav.toc .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin: 0 0 8px 8px;
+    }
+    nav.toc a {
+      display: block;
+      text-decoration: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      padding: 5px 8px;
+      border-radius: 6px;
+    }
+    nav.toc a:hover { color: var(--text-bright); background: var(--bg-card); }
+    nav.toc a.active { color: var(--text-bright); background: var(--bg-card); box-shadow: inset 3px 0 0 var(--purple); }
+    nav.toc a.sub { padding-left: 22px; font-size: 13px; }
+
+    main { flex: 1; min-width: 0; padding: 32px 40px 80px; max-width: 920px; }
+    section { margin-bottom: 56px; }
+    h2 {
+      font-size: 26px;
+      color: var(--text-bright);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 19px; color: var(--text-bright); margin: 28px 0 10px; }
+    h4 { font-size: 15.5px; color: var(--text-bright); margin: 18px 0 6px; }
+    p { margin: 0 0 12px; }
+    ul, ol { margin: 0 0 14px 22px; }
+    li { margin-bottom: 6px; }
+    li > ul { margin-top: 6px; }
+    strong { color: var(--text-bright); }
+    code, kbd {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9em;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: #e8e8ff;
+      white-space: nowrap;
+    }
+    kbd { border-bottom-width: 2px; }
+
+    .lead { font-size: 17px; color: var(--text); }
+
+    /* ── Figures ── */
+    figure {
+      margin: 18px 0 22px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+    figure img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 6px;
+      cursor: zoom-in;
+    }
+    /* never enlarge a screenshot past its real size (keeps text crisp) */
+    figure.narrow img { max-width: min(560px, 100%); }
+    figure.small img { max-width: min(420px, 100%); }
+    figcaption {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      text-align: center;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .two-col figure { margin: 0; }
+
+    /* ── Callouts ── */
+    .tip, .note, .warn {
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin: 16px 0;
+      border: 1px solid;
+      font-size: 14.5px;
+    }
+    .tip  { background: rgba(68,255,136,0.06);  border-color: rgba(68,255,136,0.35); }
+    .note { background: rgba(68,136,255,0.07);  border-color: rgba(68,136,255,0.35); }
+    .warn { background: rgba(255,204,68,0.07);  border-color: rgba(255,204,68,0.4); }
+    .tip::before  { content: "💡 Tip  "; font-weight: 700; color: var(--green); }
+    .note::before { content: "ℹ️ Good to know  "; font-weight: 700; color: #7fb0ff; }
+    .warn::before { content: "⚠️ Heads up  "; font-weight: 700; color: var(--gold); }
+
+    /* ── Steps ── */
+    ol.steps { list-style: none; margin-left: 0; counter-reset: s; }
+    ol.steps > li {
+      counter-increment: s;
+      position: relative;
+      padding: 12px 14px 12px 54px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+    }
+    ol.steps > li::before {
+      content: counter(s);
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #000;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 14.5px; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--text-dim); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td:first-child { white-space: nowrap; color: var(--text-bright); }
+
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      padding: 1px 9px;
+      border-radius: 10px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .pill.theme { background: rgba(68,255,136,0.10); color: #8dffb8; border-color: rgba(68,255,136,0.3); }
+    .pill.genre { background: rgba(170,102,255,0.14); color: #c9a8ff; border-color: rgba(170,102,255,0.3); }
+    .pill.mood  { background: rgba(255,204,68,0.10); color: #ffd97a; border-color: rgba(255,204,68,0.3); }
+    .smooth { color: var(--green); font-weight: 600; }
+    .good { color: var(--gold); font-weight: 600; }
+    .bold { color: var(--red); font-weight: 600; }
+
+    details {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      padding: 0 16px;
+    }
+    details summary {
+      cursor: pointer;
+      padding: 12px 0;
+      color: var(--text-bright);
+      font-weight: 600;
+    }
+    details[open] summary { border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    details > *:last-child { margin-bottom: 14px; }
+
+    /* ── Lightbox ── */
+    dialog.lightbox {
+      border: none;
+      background: transparent;
+      max-width: 96vw;
+      max-height: 94vh;
+      margin: auto;
+      padding: 0;
+    }
+    dialog.lightbox::backdrop { background: rgba(0,0,0,0.85); }
+    dialog.lightbox img { display: block; max-width: 96vw; max-height: 90vh; border-radius: 8px; cursor: zoom-out; }
+    dialog.lightbox p { text-align: center; color: #ccc; font-size: 13px; margin-top: 8px; }
+
+    @media (max-width: 900px) {
+      .layout { flex-direction: column; }
+      nav.toc {
+        position: static;
+        width: 100%;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+        columns: 2;
+      }
+      nav.toc a.sub { display: none; }
+      main { padding: 24px 16px 60px; }
+      .two-col { grid-template-columns: 1fr; }
+      td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🎄 xLights Mashup Builder — Help</h1>
+  <a class="back" href="/">← Back to the app</a>
+</div>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <div class="label">Contents</div>
+    <a href="#welcome">Welcome</a>
+    <a href="#quick-start">Quick start</a>
+    <a href="#tour">The screen at a glance</a>
+    <a href="#library">Sequence library</a>
+    <a class="sub" href="#library-categories">Categories &amp; tags</a>
+    <a href="#timeline">Building the timeline</a>
+    <a class="sub" href="#trim">Trimming clips</a>
+    <a class="sub" href="#reorder">Reordering</a>
+    <a class="sub" href="#reuse">Using a song twice</a>
+    <a href="#settings">Name, crossfade &amp; max length</a>
+    <a href="#save-load">Saving &amp; loading</a>
+    <a href="#automate">✨ Automate</a>
+    <a class="sub" href="#automate-order">Running order</a>
+    <a class="sub" href="#automate-preview">Reading the preview</a>
+    <a href="#generate">🎲 Generate</a>
+    <a class="sub" href="#generate-first">First-time scan</a>
+    <a class="sub" href="#generate-edits">Your edits &amp; regenerating</a>
+    <a href="#build">🔨 Build &amp; download</a>
+    <a class="sub" href="#loudness">Even out loudness</a>
+    <a class="sub" href="#fade">Fade out ending</a>
+    <a class="sub" href="#videos">Videos</a>
+    <a href="#xlights">Into xLights</a>
+    <a href="#shortcuts">Keyboard shortcuts</a>
+    <a href="#faq">Tips &amp; troubleshooting</a>
+    <a href="#glossary">Glossary</a>
+  </nav>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════ Welcome -->
+    <section id="welcome">
+      <h2>Welcome</h2>
+      <p class="lead">The Mashup Builder turns songs you've already sequenced in xLights into a
+        <strong>mashup</strong>: short sections of several songs played back to back, with the lights
+        for each section carried over exactly as you sequenced them.</p>
+      <p>You choose the songs and which part of each to use — or let the app do it. When you build, you get
+        a new xLights sequence (<code>.xsq</code>) and a matching music file (<code>.mp3</code>), ready to drop
+        into your show.</p>
+      <ul>
+        <li><strong>Your show is never changed.</strong> The app only reads your sequences and music; everything it
+          makes goes into its own <code>output</code> folder.</li>
+        <li><strong>The lights come with the music.</strong> Every effect in the part you pick is copied across and
+          moved to the right time — including videos, which are re-timed so the picture stays in sync.</li>
+        <li><strong>It can do the hard parts for you.</strong> ✨ Automate finds good places to cut each song, and
+          🎲 Generate can pick the songs too.</li>
+      </ul>
+      <figure>
+        <img src="/static/help/01-overview-empty.png" alt="The app when first opened: song library on the left, empty timeline on the right, buttons along the bottom" loading="lazy">
+        <figcaption>The app when you first open it: your song library on the left, the empty mashup timeline on the right.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Quick start -->
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <p>The fastest way to a finished mashup:</p>
+      <ol class="steps">
+        <li><strong>Add some songs.</strong> In the library on the left, hover over a song and click
+          <strong>+ Add</strong> (or drag it onto the timeline). Add three to six songs.</li>
+        <li><strong>Click ✨ Automate</strong> at the bottom, then <strong>✨ Analyze</strong>. The app listens to the
+          songs, reads their lyrics, and suggests which part of each to use and in what order.</li>
+        <li><strong>Check the suggestion and click ✓ Apply to timeline.</strong> Fine-tune any clip with its slider if
+          you like.</li>
+        <li><strong>Type a name</strong> in the <em>Name</em> box at the top and click <strong>💾 Save</strong> so
+          you can come back to it.</li>
+        <li><strong>Click 🔨 Build Mashup</strong>, then <strong>📦 Download all (.zip)</strong>.</li>
+        <li><strong>Unzip it into your xLights <code>Sequences</code> folder</strong>, open it in xLights and render.
+          See <a href="#xlights">Into xLights</a>.</li>
+      </ol>
+      <div class="tip">Don't want to choose songs at all? Click <strong>🎲 Generate</strong> instead, pick a category
+        like <em>Christmas</em> and how many songs you want, and the app picks and arranges them for you.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Tour -->
+    <section id="tour">
+      <h2>The screen at a glance</h2>
+      <figure>
+        <img src="/static/help/04-timeline.png" alt="The app with four songs on the timeline" loading="lazy">
+        <figcaption>A mashup in progress with four songs on the timeline.</figcaption>
+      </figure>
+      <table>
+        <tr><th>Area</th><th>What it's for</th></tr>
+        <tr><td>Sequence Library (left)</td><td>Every sequence in your show. Search, filter by category, add songs.</td></tr>
+        <tr><td>Mashup Timeline (right)</td><td>The songs in your mashup, top to bottom in playing order. Each card is one <em>clip</em> — a section of a song.</td></tr>
+        <tr><td>Top of the timeline</td><td>Mashup name, crossfade, maximum length, and <strong>New / Load / Save</strong>.</td></tr>
+        <tr><td>Bottom bar</td><td>Number of clips and total length, build options, and the <strong>Generate</strong>, <strong>Automate</strong> and <strong>Build</strong> buttons.</td></tr>
+        <tr><td>Top right corner</td><td>How many sequences were found, and a link back to this help.</td></tr>
+      </table>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Library -->
+    <section id="library">
+      <h2>Sequence library</h2>
+      <p>The left panel lists every sequence in your show's <code>Sequences</code> folder (copies inside
+        <code>import</code> subfolders are skipped). Each card shows the folder, song name, length, number of effects
+        and models, and its categories.</p>
+      <div class="two-col">
+        <figure>
+          <img src="/static/help/02-library-card.png" alt="Library panel with the mouse over a song card, showing the + Add and tags buttons" loading="lazy">
+          <figcaption>Hover over a song to see <strong>+ Add</strong> and <strong>✎ tags</strong>.</figcaption>
+        </figure>
+        <figure>
+          <img src="/static/help/03-library-filter.png" alt="Library filtered to the Christmas category, 48 of 80 sequences" loading="lazy">
+          <figcaption>The category filter set to <em>Christmas</em>.</figcaption>
+        </figure>
+      </div>
+      <h4>Finding songs</h4>
+      <ul>
+        <li><strong>Search box</strong> — matches the song name, its folder, or its categories (try typing
+          <code>rock</code>).</li>
+        <li><strong>Category filter</strong> — the drop-down under the search box shows only songs in one category.
+          The number in brackets is how many songs it has.</li>
+      </ul>
+      <h4>Adding songs to the mashup</h4>
+      <ul>
+        <li>Hover over a card and click <strong>+ Add</strong> to put the song at the end of the timeline, or</li>
+        <li><strong>drag the card</strong> onto the timeline and drop it exactly where you want it — a green line
+          shows where it will land.</li>
+      </ul>
+      <p>A song is added in full (start to end). Trim it afterwards, or let ✨ Automate choose the best part.</p>
+
+      <h3 id="library-categories">Categories &amp; tags</h3>
+      <p>The coloured chips on each card are the song's categories. The app works them out by itself the first
+        time you use 🎲 Generate (see <a href="#generate-first">First-time scan</a>):</p>
+      <table>
+        <tr><th>Colour</th><th>Group</th><th>Categories</th><th>Worked out from</th></tr>
+        <tr><td><span class="pill theme">Green</span></td><td>Theme</td><td>Christmas, Halloween, Faith, Comedy, Movie &amp; Musical, Kids, Intros &amp; Talking</td><td>The song's lyrics, title and file name</td></tr>
+        <tr><td><span class="pill genre">Purple</span></td><td>Genre</td><td>Pop, Rock, Country, Dance, Hip-Hop &amp; R&amp;B, Jazz &amp; Classics, Orchestral, A Cappella</td><td>MusicBrainz, a free online music database</td></tr>
+        <tr><td><span class="pill mood">Gold</span></td><td>Mood</td><td>Upbeat, Ballad / Slow, Bass-heavy, Instrumental</td><td>Listening to the audio, compared with the rest of your songs</td></tr>
+      </table>
+      <p>Hover over a chip to see <em>why</em> the song got that category.</p>
+      <h4>Fixing a song's categories</h4>
+      <p>The automatic tags won't always be right. Hover over the song and click <strong>✎ tags</strong>:</p>
+      <figure class="narrow">
+        <img src="/static/help/16-edit-categories.png" alt="Categories dialog for Feliz Navidad with checkboxes and an explanation of why each category was chosen" loading="lazy">
+        <figcaption>Tick or untick categories, or type your own (separate several with commas).</figcaption>
+      </figure>
+      <ul>
+        <li>Your own categories (e.g. <em>Disney</em>, <em>Party</em>, <em>Kids Night</em>) appear in the filter and in
+          🎲 Generate under <em>Your own</em>.</li>
+        <li>Your changes are kept when the library is scanned again.</li>
+        <li><strong>↺ Back to automatic</strong> (shown once you've changed a song) undoes your changes.</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Timeline -->
+    <section id="timeline">
+      <h2>Building the timeline</h2>
+      <p>The timeline plays from top to bottom. Each card is one <strong>clip</strong> — the part of a song that will
+        play in the mashup.</p>
+
+      <h3 id="trim">Trimming clips</h3>
+      <figure>
+        <img src="/static/help/05-clip-card.png" alt="A clip card for Let It Go with green start and red end handles on a slider, set to 0:45 to 1:28" loading="lazy">
+        <figcaption>A clip using 0:45 to 1:28 of <em>Let It Go</em> — 19% of the song.</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Drag the green handle</strong> to set where the clip starts, and the <strong>red handle</strong>
+          to set where it ends. The shaded bar shows the part of the song being used.</li>
+        <li>Or <strong>type a time</strong> into <em>Start</em> or <em>End</em>. These formats all work:
+          <code>1:23.456</code>, <code>1:23</code>, <code>83.5</code> (seconds), or a plain number
+          (<code>90</code> = 90 seconds; numbers above 999 are read as milliseconds).</li>
+        <li>Click a handle and use the <kbd>←</kbd> <kbd>→</kbd> arrow keys to nudge it in 10 ms steps.</li>
+        <li><em>Clip Duration</em> and the total at the bottom update as you go. The handles can't cross, and a clip
+          is always at least 0.1 s long.</li>
+      </ul>
+
+      <h3 id="reorder">Reordering</h3>
+      <p>Grab a clip by its <strong>⠿ handle</strong> (left of the number) and drag it up or down. A green line
+        shows where it will drop; the card you're moving turns faint.</p>
+      <figure>
+        <img src="/static/help/06-drag-reorder.png" alt="Dragging clip 4 to between clips 1 and 2, with a green drop line" loading="lazy">
+        <figcaption>Moving <em>Fancy Like</em> to second place.</figcaption>
+      </figure>
+      <div class="note">Only the ⠿ handle picks a card up, so dragging the sliders never moves clips by accident.
+        With the keyboard, tab to the ⠿ handle and press <kbd>↑</kbd> / <kbd>↓</kbd>.</div>
+
+      <h3 id="reuse">Using a song more than once</h3>
+      <p>A mashup can come back to a song — for example open with a song's intro and close with its final chorus.</p>
+      <ul>
+        <li><strong>⧉</strong> on a clip card adds another clip of the same song right after it, starting where that
+          clip ends. Drag it wherever you want and trim it.</li>
+        <li>Clicking <strong>+ Add</strong> on a song that's already in the mashup adds a fresh full-length copy.</li>
+      </ul>
+
+      <h4>Removing a clip</h4>
+      <p>Click <strong>✕</strong> on the card. (If the clip came from 🎲 Generate, the song is also remembered as one
+        you don't want — see <a href="#generate-edits">Your edits &amp; regenerating</a>.)</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Settings -->
+    <section id="settings">
+      <h2>Name, crossfade &amp; max length</h2>
+      <figure>
+        <img src="/static/help/07-header.png" alt="Timeline header with Name, Crossfade, Max length, New, Load and Save" loading="lazy">
+        <figcaption>The settings at the top of the timeline.</figcaption>
+      </figure>
+      <table>
+        <tr><th>Setting</th><th>What it does</th></tr>
+        <tr><td>Name</td><td>The name of the mashup. Used for saving and for the files you build (letters, numbers, spaces, <code>-</code> and <code>_</code>).</td></tr>
+        <tr><td>Crossfade (ms)</td><td>How long each song overlaps the next, in milliseconds (<code>1000</code> = 1 second). The music fades from one song to the next, and both songs' lights play during the overlap. <code>0</code> = straight cut. ✨ Automate can choose this for you.</td></tr>
+        <tr><td>Max length</td><td>The longest you want the whole mashup to be — type <code>5:00</code>, or just <code>5</code> for five minutes. Leave empty for no limit. Automate and Generate always stay under it.</td></tr>
+      </table>
+      <p>When a max length is set, the bottom bar shows the total against it, and turns red if your clips add up to
+        more:</p>
+      <figure class="small">
+        <img src="/static/help/09-over-max.png" alt="Total duration shown in red with the message over the 1:30 max by 8:17" loading="lazy">
+        <figcaption>Over the maximum — shorten some clips, remove one, or run ✨ Automate.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Save / load -->
+    <section id="save-load">
+      <h2>Saving &amp; loading</h2>
+      <ul>
+        <li><strong>💾 Save</strong> (or <kbd>Ctrl</kbd>+<kbd>S</kbd>) saves the mashup under its <em>Name</em>: every
+          clip and its trim, the order, crossfade, max length and build options.</li>
+        <li>Next to <em>Mashup Timeline</em> you'll see <span class="good">● unsaved changes</span> or
+          <strong>✓ saved</strong>.</li>
+        <li><strong>📂 Load</strong> lists your saved mashups, newest first, with their songs. Click
+          <strong>Load</strong> to open one or 🗑 to delete it.</li>
+        <li><strong>➕ New</strong> clears the timeline to start again.</li>
+      </ul>
+      <figure class="narrow">
+        <img src="/static/help/15-load-dialog.png" alt="Load Mashup dialog listing a saved mashup called Help Demo with 5 clips" loading="lazy">
+        <figcaption>The Load dialog. The mashup you're working on is outlined in green.</figcaption>
+      </figure>
+      <div class="note">The app asks before you lose unsaved work — when loading, starting a new mashup, or closing the
+        tab. Saving under a name that's already used asks before overwriting.</div>
+      <div class="tip">If a song in a saved mashup has since been moved or deleted, the rest still loads and the app
+        lists what's missing.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Automate -->
+    <section id="automate">
+      <h2>✨ Automate</h2>
+      <p><strong>Automate</strong> works on the songs already in your timeline. It decides which part of each song to
+        use and, if you like, what order to play them in. Nothing changes until you click <strong>Apply</strong>.</p>
+      <h4>How it decides</h4>
+      <ul>
+        <li><strong>Lyrics</strong> — it reads each sequence's own lyric timing track (the one you or the sequence
+          vendor made in xLights). Lines that repeat are treated as the chorus; lines containing the song's title are
+          the hook. If a sequence has no lyric track, it can look the lyrics up online.</li>
+        <li><strong>Beats</strong> — it uses your sequence's <em>Beats</em> / <em>Bars</em> timing tracks, or listens
+          for the beat itself, so every cut lands on a bar line.</li>
+        <li><strong>Never mid-word</strong> — a clip starts just before a sung line and ends just after one. It avoids
+          cutting while someone is singing.</li>
+        <li><strong>Flow</strong> — it compares tempo, musical key and loudness so each song leads naturally into the
+          next.</li>
+      </ul>
+
+      <figure class="narrow">
+        <img src="/static/help/10-automate-options.png" alt="Automate Mashup options: length per song, max length, running order, let songs come back, online lyrics, crossfade" loading="lazy">
+        <figcaption>Automate's options.</figcaption>
+      </figure>
+      <table>
+        <tr><th>Option</th><th>What it does</th></tr>
+        <tr><td>Length per song</td><td>Roughly how long each clip should be (10–90 s). Clips can run a little longer or shorter so they start and end at natural points.</td></tr>
+        <tr><td>Max mashup length</td><td>Same as the <em>Max length</em> box at the top. If the songs won't fit, clips are shortened first; any song that still can't fit is listed in the preview.</td></tr>
+        <tr><td>Running order</td><td>See <a href="#automate-order">Running order</a> below.</td></tr>
+        <tr><td>Let songs come back</td><td>(Best flow only) A song may appear up to three times — e.g. open and close on the same song. It never plays the same part twice or the same song twice in a row, and only brings a song back when it improves the mashup.</td></tr>
+        <tr><td>Look up lyrics online</td><td>For sequences without a lyric track, search LRCLIB (a free lyrics site). Only lyrics matching your MP3's length are used.</td></tr>
+        <tr><td>Pick the crossfade for me</td><td>Choose a crossfade of about two beats. Untick to keep the crossfade you've set.</td></tr>
+      </table>
+
+      <h3 id="automate-order">Running order</h3>
+      <table>
+        <tr><th>Choice</th><th>What happens</th></tr>
+        <tr><td>🎯 Best flow</td><td>The app picks the order so beats, tempo, key and energy flow from one song into the next. It also likes to open on a song's real intro and close on a song's real ending.</td></tr>
+        <tr><td>🔀 Scramble</td><td>A random order, different every time. It won't give you back your current order or put the same song twice in a row. Cut points are still chosen musically.</td></tr>
+        <tr><td>📌 Keep my order</td><td>Your order stays as it is; only the cut points are chosen.</td></tr>
+      </table>
+
+      <h3 id="automate-preview">Reading the preview</h3>
+      <p>After <strong>✨ Analyze</strong> (a few seconds — the first time for each song takes a little longer) you
+        see the suggested mashup:</p>
+      <figure class="narrow">
+        <img src="/static/help/11-automate-preview.png" alt="Suggested Mashup preview listing each clip with its times, the section used, tempo and key, and transition notes between clips" loading="lazy">
+        <figcaption>A Best flow suggestion: <em>Feliz Navidad</em> opens on its intro and returns later for its second chorus.</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Top line</strong> — number of clips, total length (against your max), the crossfade, how the order
+          was chosen, and any return visits.</li>
+        <li><strong>Each clip</strong> — the times used, the section (<em>Verse 1 → Chorus 1</em>), the first and last
+          lyric line, and the song's tempo (BPM) and key.</li>
+        <li><strong>Between clips</strong> — how well the two songs fit:
+          <span class="smooth">smooth</span> (close tempo, compatible key),
+          <span class="good">good</span>, or <span class="bold">bold</span> (a noticeable change — fine for contrast,
+          just less seamless).</li>
+        <li><span class="good">⚠ cut overlaps a sung word</span> — there was no clean gap, so the cut touches a word.
+          Worth a quick listen; nudge the clip's handle if needed.</li>
+        <li>The lyric and beat sources at the bottom of each clip tell you what the decision was based on.</li>
+      </ul>
+      <figure class="narrow">
+        <img src="/static/help/12-automate-scramble.png" alt="Scrambled suggestion with a Scramble again button" loading="lazy">
+        <figcaption>With 🔀 Scramble, use <strong>🔀 Scramble again</strong> for a new random order.</figcaption>
+      </figure>
+      <p>Click <strong>✓ Apply to timeline</strong> to use it, <strong>⚙ Change options</strong> to try different
+        settings, or <strong>Cancel</strong> to leave your timeline as it was.</p>
+      <figure>
+        <img src="/static/help/13-after-apply.png" alt="Timeline after applying Automate, with a purple note under each clip title explaining the choice" loading="lazy">
+        <figcaption>After applying, each clip shows a ✨ note explaining the choice. The note disappears if you trim that
+          clip yourself.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Generate -->
+    <section id="generate">
+      <h2>🎲 Generate</h2>
+      <p><strong>Generate</strong> picks the songs for you. Choose what kind of mashup you want — a theme, genre or
+        mood — and how many songs, and it chooses songs that work together (similar tempo, compatible keys, similar
+        bass and loudness), then arranges them just like ✨ Automate.</p>
+
+      <h3 id="generate-first">First-time scan</h3>
+      <p>The first time you open Generate, the app needs to get to know your library:</p>
+      <figure class="narrow">
+        <img src="/static/help/21-generate-first-scan.png" alt="Generate dialog asking to classify the library first, with an option to look up genres online" loading="lazy">
+        <figcaption>Click <strong>🏷 Classify my library</strong> once.</figcaption>
+      </figure>
+      <ul>
+        <li>It listens to every song and reads its lyrics, then sorts the songs into
+          <a href="#library-categories">categories</a>.</li>
+        <li>With online lookups on, it takes about 4–5 minutes for ~80 songs (MusicBrainz only allows one request per
+          second). After that, only new or changed songs are checked, so a re-scan takes seconds.</li>
+        <li>You can close the window while it runs — finished songs are saved.</li>
+        <li>Use <strong>🏷 Re-scan library</strong> after adding new sequences to your show.</li>
+      </ul>
+
+      <h3>Choosing what to generate</h3>
+      <figure class="narrow">
+        <img src="/static/help/17-generate-options.png" alt="Generate options with Christmas and Upbeat selected, all selected mode, 30 songs match, 5 songs, 25 seconds each, 3:00 max" loading="lazy">
+        <figcaption><em>Christmas</em> + <em>Upbeat</em>, five songs, 3-minute maximum.</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Click categories</strong> to select them (they turn purple). The number on each is how many songs
+          it has.</li>
+        <li><strong>all</strong> = songs must have every selected category (Christmas <em>and</em> Upbeat).
+          <strong>any</strong> = songs with at least one (Halloween <em>or</em> Comedy). The count next to it shows how
+          many songs match.</li>
+        <li><strong>Number of songs</strong>, <strong>Length per song</strong>, <strong>Max mashup length</strong>
+          and <strong>Let songs come back</strong> work as in Automate.</li>
+        <li>With no category selected, any song can be picked (talking intros are left out unless you select
+          <em>Intros &amp; Talking</em>).</li>
+      </ul>
+      <figure class="narrow">
+        <img src="/static/help/18-generate-preview.png" alt="Generated Mashup preview listing the songs picked (pinned and generated) and the running order" loading="lazy">
+        <figcaption>The result: 📌 songs you added yourself, 🎲 songs Generate picked, then the running order.</figcaption>
+      </figure>
+      <p>Click <strong>🎲 Generate another</strong> for a different mashup with the same settings, or
+        <strong>✓ Apply to timeline</strong> to use it.</p>
+      <div class="note"><strong>Every generation is different.</strong> The app remembers what it has generated and never
+        gives you the same set of songs twice for the same categories. If only a few songs match (e.g. 3
+        <em>A Cappella</em> songs), it changes the order and the parts used instead.</div>
+
+      <h3 id="generate-edits">Your edits &amp; regenerating</h3>
+      <p>Generate respects what you've done to the timeline:</p>
+      <ul>
+        <li><strong>📌 Songs you added yourself</strong> (with + Add or by dragging) are always kept.</li>
+        <li><strong>🚫 Songs you removed</strong> from a generated mashup (with ✕) won't be picked again.</li>
+      </ul>
+      <p>So a good way to work is: generate, remove anything you don't want, add any song you do want, then click
+        🎲 Generate again — it fills the gaps with new songs.</p>
+      <figure class="narrow">
+        <img src="/static/help/19-generate-excluded.png" alt="Generate options showing an Always included list and a Won't be picked list with removable entries" loading="lazy">
+        <figcaption>Both lists appear in the Generate window. Click ✕ on a removed song to allow it again, or
+          <em>clear all</em>.</figcaption>
+      </figure>
+      <div class="tip">Adding a removed song back with + Add takes it off the "won't be picked" list automatically.
+        Both lists are saved with the mashup.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Build -->
+    <section id="build">
+      <h2>🔨 Build &amp; download</h2>
+      <figure>
+        <img src="/static/help/08-bottom-bar.png" alt="Bottom bar with clip count, total duration, Even out loudness and Fade out ending options, and the Generate, Automate and Build buttons" loading="lazy">
+        <figcaption>The bottom bar: totals, build options and the main buttons.</figcaption>
+      </figure>
+      <p>Click <strong>🔨 Build Mashup</strong>. After a few seconds to a minute (depending on length):</p>
+      <figure class="narrow">
+        <img src="/static/help/20-build-complete.png" alt="Mashup Complete window showing loudness adjustments, fade-out summary and a Download all zip button" loading="lazy">
+        <figcaption>The build summary and the download button.</figcaption>
+      </figure>
+      <p><strong>📦 Download all (.zip)</strong> gives you one zip containing a folder named after your mashup, with the
+        <code>.xsq</code> and <code>.mp3</code> inside. The files are also kept in the app's <code>output</code>
+        folder.</p>
+
+      <h3 id="loudness">Even out loudness</h3>
+      <p>Songs are mastered at very different volumes — in this show, <em>Sleigh Ride</em> is almost 8 dB louder than
+        <em>Frosty the Snowman</em>. With <strong>Even out loudness</strong> ticked (the default), every song is
+        brought to the same loudness, like mp3gain does.</p>
+      <ul>
+        <li>The adjustment is worked out from the <em>whole song</em>, so each song keeps its own quiet verses and
+          louder choruses.</li>
+        <li>If a quiet song needs a boost, a limiter stops it from distorting.</li>
+        <li>The build summary shows the adjustment for each clip (e.g. <code>+2.4 dB</code>).</li>
+      </ul>
+
+      <h3 id="fade">Fade out ending</h3>
+      <p>With <strong>Fade out ending</strong> ticked (the default, 3 seconds), the mashup fades out instead of
+        stopping abruptly — both the music and the lights.</p>
+      <ul>
+        <li>The lights use xLights' own <strong>Fade Out</strong> transition on the last effects, so you'll see it in
+          xLights' effect settings and can adjust it there.</li>
+        <li>Set the length from 0.5 to 15 seconds in the box next to the checkbox.</li>
+      </ul>
+      <div class="tip">If your last clip already ends on the song's real ending (Automate notes say <em>"ends on the
+        song's real ending"</em>), you may prefer to untick the fade so the ending isn't softened.</div>
+
+      <h3 id="videos">Videos</h3>
+      <p>Many sequences use the xLights <strong>Video</strong> effect. Videos aren't cut — instead, when a clip starts
+        part-way through a video, the effect's start time is moved forward so the picture stays in sync with the
+        music. Looping, manual-speed and stretched (<em>Slow/Accelerate</em>) videos are handled too. The build
+        summary says how many videos were re-timed.</p>
+      <div class="warn">After your first few builds, play a section with a trimmed video in xLights to check it starts
+        at the right frame.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ xLights -->
+    <section id="xlights">
+      <h2>Into xLights</h2>
+      <ol class="steps">
+        <li>Unzip the download into your show's <code>Sequences</code> folder. You'll get a folder named after the
+          mashup containing the <code>.xsq</code> and <code>.mp3</code>.</li>
+        <li>In xLights, open the <code>.xsq</code>. If xLights asks for the media file, choose the <code>.mp3</code>
+          in the same folder.</li>
+        <li>Play it through. Check any spots marked <em>⚠ cut overlaps a sung word</em>, the transitions, trimmed
+          videos and the ending fade.</li>
+        <li><strong>Render All</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>) to create the
+          <code>.fseq</code> that your controllers play.</li>
+        <li>Save, and add the mashup to your playlist or schedule.</li>
+      </ol>
+      <div class="note">Mashups you copy into <code>Sequences</code> show up in the app's library next time too — you
+        can use a mashup as part of another mashup.</div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Shortcuts -->
+    <section id="shortcuts">
+      <h2>Keyboard shortcuts</h2>
+      <table>
+        <tr><th>Keys</th><th>Action</th></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save the mashup</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close the Load, Automate or Generate window</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Nudge a selected trim handle by 10 ms</td></tr>
+        <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Move a clip up or down (with its ⠿ handle selected)</td></tr>
+        <tr><td><kbd>Tab</kbd></td><td>Move between handles, buttons and boxes</td></tr>
+      </table>
+    </section>
+
+    <!-- ═══════════════════════════════════════ FAQ -->
+    <section id="faq">
+      <h2>Tips &amp; troubleshooting</h2>
+
+      <details>
+        <summary>A song is in the wrong category</summary>
+        <p>Hover over it in the library and click <strong>✎ tags</strong> to fix it. Hover over a chip first to see
+          why it was chosen. Automatic tags depend on the lyrics in your sequence and on MusicBrainz recognising the
+          song, so some will need correcting.</p>
+      </details>
+
+      <details>
+        <summary>The preview says "⚠ cut overlaps a sung word"</summary>
+        <p>There was no clean pause at that point, so the cut touches a word. Listen to it in xLights after building;
+          if it bothers you, nudge that clip's handle a little earlier or later and rebuild.</p>
+      </details>
+
+      <details>
+        <summary>Transitions are marked "bold"</summary>
+        <p>The two songs have quite different tempos or keys. That's often fine — a change of pace can be fun — but
+          for a smoother mashup choose songs with similar tempos (the BPM is shown in the preview and the category
+          editor), or use 🎲 Generate, which prefers songs that fit together.</p>
+      </details>
+
+      <details>
+        <summary>Automate or Generate left a song out</summary>
+        <p>All the songs couldn't fit in your <em>Max mashup length</em> even with shorter clips. The preview names the
+          song that was left out. Raise the maximum, lower the number of songs, or shorten <em>Length per song</em>.</p>
+      </details>
+
+      <details>
+        <summary>The first Generate is slow</summary>
+        <p>The first library scan listens to every song and looks up genres online — about 4–5 minutes for ~80
+          songs. It only happens once; afterwards only new or changed songs are checked. You can untick the online
+          lookups for a faster scan without genres.</p>
+      </details>
+
+      <details>
+        <summary>Can I use it without internet?</summary>
+        <p>Yes. Everything works offline except the online lyric lookup (only for sequences without a lyric track) and
+          genre lookup. Untick those options; songs then simply won't get genre categories.</p>
+      </details>
+
+      <details>
+        <summary>A new sequence doesn't appear in the library</summary>
+        <p>The library is read when the app starts. Restart the app after adding sequences to your show, then use
+          <strong>🏷 Re-scan library</strong> in the Generate window to categorise them. Sequences inside
+          <code>import</code> folders, and sequences whose music file can't be found, aren't listed.</p>
+      </details>
+
+      <details>
+        <summary>Some lyric notes look like gibberish ("Fay Lease Nav E Dad")</summary>
+        <p>Some sequences have lyric tracks spelled phonetically to drive singing faces. The app still uses them to
+          find the chorus and the line endings — they just read oddly in the notes.</p>
+      </details>
+
+      <details>
+        <summary>The app looks out of date after an update</summary>
+        <p>Restart the app (close the window running <code>app.py</code> and start it again), then press
+          <kbd>Ctrl</kbd>+<kbd>F5</kbd> in the browser.</p>
+      </details>
+
+      <details>
+        <summary>Where are my files?</summary>
+        <ul>
+          <li><strong>Built mashups</strong> — <code>output\&lt;name&gt;\</code> in the app folder (and in your
+            downloads if you used the zip).</li>
+          <li><strong>Saved mashups</strong> — <code>saved_mashups\</code></li>
+          <li><strong>Your category changes</strong> — <code>library_overrides.json</code></li>
+        </ul>
+        <p>Other folders (<code>analysis_cache</code>, <code>library_cache</code>, <code>loudness_cache.json</code>)
+          only speed things up and can be deleted safely.</p>
+      </details>
+    </section>
+
+    <!-- ═══════════════════════════════════════ Glossary -->
+    <section id="glossary">
+      <h2>Glossary</h2>
+      <table>
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>Clip</td><td>One section of one song in the mashup — a card on the timeline.</td></tr>
+        <tr><td>Crossfade</td><td>The overlap where one song fades out as the next fades in.</td></tr>
+        <tr><td>BPM</td><td>Beats per minute — the song's tempo.</td></tr>
+        <tr><td>Key / Camelot code</td><td>The song's musical key. The Camelot code (e.g. <code>8A</code>) makes matching easy: the same number, or one apart, usually sounds good together.</td></tr>
+        <tr><td>Bar line / downbeat</td><td>The first beat of a bar — the natural place to start or end a section.</td></tr>
+        <tr><td>Lyric timing track</td><td>The xLights timing track with the song's words, usually used for singing faces. Automate reads it to find the chorus and where lines end.</td></tr>
+        <tr><td>LUFS</td><td>A standard measure of how loud music sounds. The app brings every song to −16 LUFS.</td></tr>
+        <tr><td>Render / .fseq</td><td>xLights turns a sequence into a <code>.fseq</code> file of light data. Every new mashup needs rendering once in xLights.</td></tr>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<dialog class="lightbox" id="lightbox" onclick="this.close()">
+  <img id="lightboxImg" alt="">
+  <p id="lightboxCap"></p>
+</dialog>
+
+<script>
+  // Click a screenshot to see it full size
+  const lb = document.getElementById('lightbox');
+  document.querySelectorAll('figure img').forEach(img => {
+    img.addEventListener('click', () => {
+      document.getElementById('lightboxImg').src = img.src;
+      document.getElementById('lightboxImg').alt = img.alt;
+      const cap = img.closest('figure').querySelector('figcaption');
+      document.getElementById('lightboxCap').textContent = cap ? cap.textContent : '';
+      lb.showModal();
+    });
+  });
+
+  // Highlight the current section in the contents
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const targets = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const mark = () => {
+    let current = targets[0];
+    for (const t of targets) {
+      if (t.getBoundingClientRect().top < 120) current = t;
+    }
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+  };
+  document.addEventListener('scroll', mark, { passive: true });
+  mark();
+</script>
+</body>
+</html>

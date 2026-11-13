@@ -1,0 +1,31 @@
+# Built mashups (contain copyrighted music)
+output/
+*.mp3
+*.m4a
+*.wav
+*.mp4
+*.avi
+*.fseq
+
+# Caches (rebuilt automatically)
+analysis_cache/
+library_cache/
+loudness_cache.json
+
+# Personal data
+config.json
+saved_mashups/
+library_overrides.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.tmp
