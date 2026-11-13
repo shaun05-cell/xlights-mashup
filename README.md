@@ -19,8 +19,10 @@ The app only **reads** your show — everything it creates goes to its own `outp
 Requires Python 3.12+ (developed on 3.15) on Windows.
 
 ```bash
-pip install -r requirements.txt
+python install.py
 ```
+
+The installer checks your Python version, sets up pip if it's missing, installs the packages in `requirements.txt` from PyPI (retrying for your user only if needed), and confirms everything works. `python install.py --check` just reports what's installed. (Prefer doing it by hand? `pip install -r requirements.txt` does the same install.)
 
 The first time you run it, the app asks for two folders (with standard Windows folder pickers) and saves them in `config.json`:
 

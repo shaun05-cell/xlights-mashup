@@ -44,7 +44,8 @@ xlights-mashup/
 │   └── help.html              # User guide served at /help (❓ Help in the app header)
 ├── static/help/*.png          # 20 screenshots used by the help page
 ├── config.example.json        # Template for config.json
-├── requirements.txt           # flask, imageio-ffmpeg, numpy
+├── install.py                 # Installer: Python check, ensurepip, pip install -r, verify
+├── requirements.txt           # flask, imageio-ffmpeg, numpy (major-version capped)
 ├── README.md, ARCHITECTURE.md
 ├── .gitignore
 │
@@ -512,7 +513,7 @@ Effects are copied by model / group / sub-model **name**, together with their di
 
 ```bash
 cd xlights-mashup
-pip install -r requirements.txt
+python install.py            # or: pip install -r requirements.txt   (--check = report only)
 python app.py               # opens http://localhost:5000 in your default browser once the server is up
 python app.py --no-browser  # start without opening a browser
 # restart after changing Python files; hard refresh (Ctrl+F5) after HTML changes
@@ -549,5 +550,6 @@ First use of 🎲 Generate offers a one-time library scan (≈ 4–5 min with on
 | 2026-11-12 | `app.py` opens the browser automatically when the server is ready (`--no-browser` to skip); a second launch reuses the running copy |
 | 2026-11-12 | Show paths moved to git-ignored `config.json` with first-launch folder pickers; build window shows the output path relative to the app folder |
 | 2026-11-12 | Cleanup: removed old ad-hoc scripts (`quick_check.py`, `test_resolve.py`) and test builds |
+| 2026-11-12 | `install.py`: standard-library installer (version check, ensurepip, pip install -r requirements.txt with `--user` fallback, import + ffmpeg verification, `--check` mode) |
 | 2026-11-12 | Supporting modules moved to the `core/` package (`app.py` stays the entry point); loudness cache stays in the app folder |
 | 2026-11-12 | Help page (`/help`) with 20 screenshots captured from the running app (Playwright driving Edge, headless). Re-take screenshots after visible UI changes so the guide stays accurate |
