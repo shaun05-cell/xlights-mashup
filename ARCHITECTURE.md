@@ -31,31 +31,35 @@ The tool **never modifies** the show folder or media files. Output goes to `outp
 
 ```
 xlights-mashup/
-├── app.py                    # Flask server: routes, background jobs, config loading
-├── config.json               # Your show/media paths (git-ignored; from config.example.json)
-├── config.example.json       # Template for config.json
-├── mashup_engine.py          # XSQ parsing/merging, media resolution, ffmpeg,
-│                             #   loudness, video re-timing, ending fade
-├── automix.py                # Audio + lyric analysis, clip candidates, planner (✨ Automate)
-├── library.py                # Library classification, MusicBrainz, song picker (🎲 Generate)
+│  ── Source (in git) ──────────────────────────────────────────────
+├── app.py                     # Flask server: routes, background jobs, config + first-run setup
+├── mashup_engine.py           # XSQ parsing/merging, media resolution, ffmpeg,
+│                              #   loudness, video re-timing, ending fade
+├── automix.py                 # Audio + lyric analysis, clip candidates, planner (✨ Automate)
+├── library.py                 # Library classification, MusicBrainz, song picker (🎲 Generate)
 ├── templates/
-│   ├── index.html            # Single-page UI (inline CSS + JS, no build step, no CDN)
-│   └── help.html             # User guide served at /help (❓ Help in the app header)
-├── static/help/*.png         # 20 screenshots used by the help page
-├── output/<Name>/            # Built mashups: <Name>.xsq, <Name>.mp3
-├── saved_mashups/<Name>.json # Saved mashup projects
-├── analysis_cache/<sha1>.json# Per-song analysis (beats, key, lyrics, energy, features)
+│   ├── index.html             # Single-page UI (inline CSS + JS, no build step, no CDN)
+│   └── help.html              # User guide served at /help (❓ Help in the app header)
+├── static/help/*.png          # 20 screenshots used by the help page
+├── config.example.json        # Template for config.json
+├── requirements.txt           # flask, imageio-ffmpeg, numpy
+├── README.md, ARCHITECTURE.md
+├── .gitignore
+│
+│  ── Created at run time (git-ignored) ────────────────────────────
+├── config.json                # Your show/media paths (written by first-run setup)
+├── output/<Name>/             # Built mashups: <Name>.xsq, <Name>.mp3
+├── saved_mashups/<Name>.json  # Saved mashup projects
+├── library_overrides.json     # Your category corrections
+├── analysis_cache/<sha1>.json # Per-song analysis (beats, key, lyrics, energy, features)
 ├── library_cache/
-│   ├── library.json          # Classified library
-│   ├── musicbrainz_cache.json# Genre/tag lookups (permanent)
-│   └── generator_history.json# Past generations (for uniqueness), last 200
-├── library_overrides.json    # User's category corrections (user data — never auto-deleted)
-├── loudness_cache.json       # Per-file LUFS / true peak
-├── test_resolve.py, quick_check.py   # Old ad-hoc scripts
-└── ARCHITECTURE.md
+│   ├── library.json           # Classified library
+│   ├── musicbrainz_cache.json # Genre/tag lookups (permanent)
+│   └── generator_history.json # Past generations (for uniqueness), last 200
+└── loudness_cache.json        # Per-file LUFS / true peak
 ```
 
-All caches are safe to delete (they rebuild). `saved_mashups/` and `library_overrides.json` are user data.
+Caches are safe to delete (they rebuild, but a full library re-scan takes a few minutes). `config.json`, `output/`, `saved_mashups/` and `library_overrides.json` are your data.
 
 ---
 
@@ -542,4 +546,5 @@ First use of 🎲 Generate offers a one-time library scan (≈ 4–5 min with on
 | 2026-11-12 | Automate running-order choice: Best flow / Scramble / Keep my order |
 | 2026-11-12 | `app.py` opens the browser automatically when the server is ready (`--no-browser` to skip); a second launch reuses the running copy |
 | 2026-11-12 | Show paths moved to git-ignored `config.json` with first-launch folder pickers; build window shows the output path relative to the app folder |
+| 2026-11-12 | Cleanup: removed old ad-hoc scripts (`quick_check.py`, `test_resolve.py`) and test builds |
 | 2026-11-12 | Help page (`/help`) with 20 screenshots captured from the running app (Playwright driving Edge, headless). Re-take screenshots after visible UI changes so the guide stays accurate |
