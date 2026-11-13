@@ -1,3 +1,6 @@
-flask>=3.1
-imageio-ffmpeg>=0.8
-numpy>=2.0
+# xLights Mashup Builder — install with:  pip install -r requirements.txt
+# Python 3.12+ (developed on 3.15). tkinter (first-run folder picker) ships with Python.
+
+flask>=3.1,<4            # web server and UI
+imageio-ffmpeg>=0.8,<1   # bundled ffmpeg for cutting, mixing and measuring audio
+numpy>=2.0,<3            # audio analysis (beats, key, energy) for Automate and Generate
