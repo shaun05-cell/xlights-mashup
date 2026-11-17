@@ -970,7 +970,7 @@ def _overlaps(seg, used):
 
 
 def _search(cands, Tc, min_uses, fixed_seq, max_ms, soft_ms, target_ms,
-            allow_reuse):
+            allow_reuse, join_ms=0):
     """
     Beam search for the running order: a list of (song, candidate) slots.
 
@@ -979,6 +979,7 @@ def _search(cands, Tc, min_uses, fixed_seq, max_ms, soft_ms, target_ms,
       back and never replaying a part of the song already used
     * total length never exceeds max_ms; going past soft_ms costs score
     * fixed_seq (list of song ids) pins the order, only clip choice varies
+    * join_ms: extra time each song change adds (fade out → fade in)
 
     Returns (slots, all_songs_fit).
     """
@@ -987,10 +988,11 @@ def _search(cands, Tc, min_uses, fixed_seq, max_ms, soft_ms, target_ms,
     min_dur = [min(c['e'] - c['s'] for c in cands[j]) for j in range(n)]
     # Reserve room for songs not yet placed, so nothing gets squeezed out
     # (only when every song can fit at all)
-    reserve = sum(min_dur[j] * min_uses[j] for j in range(n)) <= max_ms
+    reserve = (sum((min_dur[j] + join_ms) * min_uses[j] for j in range(n)) - join_ms
+               <= max_ms)
 
     def owed_time(uses):
-        return sum(min_dur[j] * max(0, min_uses[j] - uses[j]) for j in range(n))
+        return sum((min_dur[j] + join_ms) * max(0, min_uses[j] - uses[j]) for j in range(n))
 
     def heuristic(uses):            # optimistic value of songs still owed
         return sum(best_mid[j] * max(0, min_uses[j] - uses[j]) for j in range(n))
@@ -1031,7 +1033,7 @@ def _search(cands, Tc, min_uses, fixed_seq, max_ms, soft_ms, target_ms,
                 nu[j] += 1
                 owed_after = owed_time(nu) if reserve else 0
                 for c, cd in enumerate(cands[j]):
-                    dur = cd['e'] - cd['s']
+                    dur = cd['e'] - cd['s'] + (join_ms if slots else 0)
                     if total + dur + owed_after > max_ms or _overlaps(cd, used[j]):
                         continue
                     v = g + _node_value(cd, 'mid' if slots else 'first')
@@ -1102,7 +1104,7 @@ def _scramble(slot_song, rng):
 def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
                 allow_reuse=True, max_total_s=None, online=True,
                 crossfade_ms=None, progress=None, log=print, seed=None,
-                order_mode=None):
+                order_mode=None, transition=None, fade_between_ms=None):
     """
     seqs: list of sequence dicts, one per clip in the user's current order
           (the same song may appear several times).
@@ -1113,7 +1115,11 @@ def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
                 None       — 'best' if allow_reorder else 'keep' (legacy)
     allow_reuse: ('best' only) a song may come back for another section.
     max_total_s: hard cap on the mashup length (None = no cap).
-    crossfade_ms: None = choose automatically, else use the given value.
+    transition: 'crossfade' — songs overlap by crossfade_ms (None = auto ≈ 2 beats)
+                'fade'      — fade out → fade in, total fade_between_ms (default
+                              2000), half each side, no overlap
+                'cut'       — straight cut
+                None        — 'crossfade' (legacy behaviour)
     """
     progress = progress or (lambda f, m: None)
 
@@ -1142,10 +1148,20 @@ def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
     max_ms = float(max_total_s) * 1000 if max_total_s else float('inf')
     target_ms = max(8, float(target_s)) * 1000
     n_slots = len(seqs)
+
+    # Transition between songs
+    if transition not in ('crossfade', 'fade', 'cut'):
+        transition = 'crossfade'
+    fb = 0
+    if transition == 'fade':
+        fb = max(200, int(fade_between_ms)) if fade_between_ms else 2000
+    join_ms = fb                       # a fade adds time; a crossfade overlaps
+    budget_ms = max_ms - join_ms * max(0, n_slots - 1)
+
     shrunk = False
-    if n_slots * target_ms > max_ms * 0.9:
+    if n_slots * target_ms > budget_ms * 0.9:
         # leave headroom: clips snap to section boundaries, so they vary
-        target_ms = max(8000.0, max_ms / n_slots * 0.85)
+        target_ms = max(8000.0, budget_ms / n_slots * 0.85)
         shrunk = True
     if order_mode not in ('best', 'scramble', 'keep'):
         order_mode = 'best' if allow_reorder else 'keep'
@@ -1167,20 +1183,25 @@ def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
            for ca in cands[i]] for i in range(n)]
 
     slots, all_fit = _search(cands, Tc, min_uses, fixed_seq,
-                             max_ms, soft_ms, target_ms, reuse)
+                             max_ms, soft_ms, target_ms, reuse, join_ms)
     if not slots:
         raise ValueError('No clips fit within the maximum mashup length — '
                          'try a longer maximum or fewer songs.')
     used_songs = {j for j, _ in slots}
     dropped = [useqs[j]['name'] for j in range(n) if j not in used_songs]
 
-    if crossfade_ms is None:
+    xf_auto = False
+    if transition != 'crossfade':
+        xf = 0
+    elif crossfade_ms is None:
         beat = float(np.median([s.beat_ms for s in songs]))
         xf = int(min(1500, max(400, round(2 * beat / 50) * 50)))
         xf_auto = True
     else:
         xf = int(crossfade_ms)
-        xf_auto = False
+    # Cuts move outward by half the transition so it's centred on the bar
+    # line: the crossfade overlap, or the fade-out → fade-in dip.
+    shift = xf / 2 if transition == 'crossfade' else fb / 2
 
     m = len(slots)
     visits = [0] * n
@@ -1189,11 +1210,11 @@ def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
         song, seg = songs[i], cands[i][c]
         visits[i] += 1
         s, e = seg['s'], seg['e']
-        if xf and m > 1:                      # centre the fade on the bar line
+        if shift and m > 1:                   # centre the transition on the bar line
             if k > 0:
-                s = max(0, s - xf / 2)
+                s = max(0, s - shift)
             if k < m - 1:
-                e = min(song.dur, e + xf / 2)
+                e = min(song.dur, e + shift)
         why = [seg['label']]
         if visits[i] > 1:
             why.insert(0, f"{_ordinal(visits[i])} visit")
@@ -1242,11 +1263,14 @@ def plan_mashup(seqs, cache_dir, target_s=30, allow_reorder=True,
     return {
         'clips': clips,
         'transitions': transitions,
+        'transition': transition,
         'crossfade_ms': xf,
         'crossfade_auto': xf_auto,
+        'fade_between_ms': fb,
         'reordered': [j for j, _ in slots] != slot_song,
         'order_mode': order_mode,
-        'total_ms': int(sum(cands[i][c]['e'] - cands[i][c]['s'] for i, c in slots)),
+        'total_ms': int(sum(cands[i][c]['e'] - cands[i][c]['s'] for i, c in slots)
+                        + fb * max(0, len(slots) - 1)),
         'max_ms': None if max_ms == float('inf') else int(max_ms),
         'target_used_s': round(target_ms / 1000),
         'target_shrunk': shrunk,

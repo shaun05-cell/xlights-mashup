@@ -601,59 +601,102 @@ _OUT_TRANSITION_EXTRAS = ('T_CHOICE_Out_Transition_Type', 'T_SLIDER_Out_Transiti
                           'T_CHECKBOX_Out_Transition_Reverse')
 
 
-def apply_end_fade(merged_element_effects, effect_db, total_ms, fade_ms):
+_IN_TRANSITION_EXTRAS = ('T_CHOICE_In_Transition_Type', 'T_SLIDER_In_Transition_Adjust',
+                         'T_VALUECURVE_In_Transition_Adjust',
+                         'T_CHECKBOX_In_Transition_Reverse')
+
+
+def _model_effects(elements):
     """
-    Fade the lights to black over the last fade_ms of the sequence using
-    xLights' per-effect Fade Out transition (T_TEXTCTRL_Fadeout, seconds;
-    'Fade' is the default out-transition type, so any other type such as
-    Wipe is removed).
+    Yield every model effect dict (timing tracks skipped) from either the
+    merged structure (dict of elements, dict submodels/strands) or a single
+    clip's structure (list of elements, list submodels/strands).
+    """
+    elems = elements.values() if isinstance(elements, dict) else elements
+    for me in elems:
+        if me.get('type') == 'timing':
+            continue
+        for layer in me['layers']:
+            yield from layer['effects']
+        subs = me['submodels']
+        for sub in (subs.values() if isinstance(subs, dict) else subs):
+            yield from sub['effects']
+        strands = me['strands']
+        for strand in (strands.values() if isinstance(strands, dict) else strands):
+            for layer in strand['layers']:
+                yield from layer['effects']
 
-    * effects reaching the end fade over the whole window (or their whole
-      length if shorter), hitting black exactly at the end
-    * effects ending inside the window fade from the window start, so they
-      reach black when they end instead of cutting off at full brightness
-    * an existing longer fade-out is kept; fade-in is shortened if fade-in
-      + fade-out would exceed the effect's length
 
-    Model effects only (timing tracks are untouched). Returns the count of
-    effects changed. Changed settings get new EffectDB entries.
+def _read_seconds(tokens, key):
+    try:
+        return float(_setting(tokens, key) or 0)
+    except ValueError:
+        return 0.0
+
+
+def apply_fade(effects, effect_db, direction, edge_ms, fade_ms):
+    """
+    Fade lights using xLights' per-effect Fade In / Fade Out transitions
+    (T_TEXTCTRL_Fadein / T_TEXTCTRL_Fadeout, seconds). 'Fade' is the default
+    transition type, so any other type (Wipe, Circle Explode…) is removed.
+
+    direction='out': window [edge_ms - fade_ms, edge_ms] — fade to black by edge
+      * effects reaching the edge fade over the whole window (or their length)
+      * effects ending inside the window fade from the window start, so they
+        reach black when they end instead of cutting off at full brightness
+    direction='in':  window [edge_ms, edge_ms + fade_ms] — fade up from black
+      * effects starting at the edge fade in over the whole window
+      * effects starting inside the window fade in until the window end
+
+    An existing longer plain fade is kept. If fade-in + fade-out would exceed
+    the effect's length, both are scaled down proportionally. Changed
+    settings get new EffectDB entries (shared entries are untouched).
+    Returns the number of effects changed.
     """
     if fade_ms <= 0:
         return 0
-    w0 = total_ms - fade_ms
+    out = direction == 'out'
+    main_key = 'T_TEXTCTRL_Fadeout' if out else 'T_TEXTCTRL_Fadein'
+    other_key = 'T_TEXTCTRL_Fadein' if out else 'T_TEXTCTRL_Fadeout'
+    extras = _OUT_TRANSITION_EXTRAS if out else _IN_TRANSITION_EXTRAS
     text_idx = {t: i for i, t in enumerate(effect_db)}
     memo = {}
     count = 0
 
-    def fade(eff):
-        nonlocal count
+    for eff in effects:
         try:
             s, e, ref = int(eff['startTime']), int(eff['endTime']), int(eff['ref'])
         except (KeyError, ValueError):
-            return
-        if e <= w0 or e <= s or not (0 <= ref < len(effect_db)):
-            return
+            continue
+        if e <= s or not (0 <= ref < len(effect_db)):
+            continue
+        if out:
+            w0 = edge_ms - fade_ms
+            if e <= w0 or s >= edge_ms:
+                continue
+            touches = e >= edge_ms - 50
+            target = min(fade_ms if touches else e - w0, e - s)
+        else:
+            w1 = edge_ms + fade_ms
+            if s >= w1 or e <= edge_ms:
+                continue
+            touches = s <= edge_ms + 50
+            target = min(fade_ms if touches else w1 - s, e - s)
         dur = (e - s) / 1000.0
-        reaches_end = e >= total_ms - 50
-        target = min(fade_ms if reaches_end else e - w0, e - s) / 1000.0
-        key = (ref, round(target, 2), round(dur, 2))
+        key = (ref, round(target / 1000.0, 2), round(dur, 2))
         if key not in memo:
             tokens = [t for t in effect_db[ref].split(',') if t] if effect_db[ref] else []
-            had_other_type = _setting(tokens, 'T_CHOICE_Out_Transition_Type') not in (None, 'Fade')
-            try:
-                cur = float(_setting(tokens, 'T_TEXTCTRL_Fadeout') or 0)
-            except ValueError:
-                cur = 0.0
-            out = min(dur, max(target, 0 if had_other_type else cur))
-            for k in _OUT_TRANSITION_EXTRAS:
+            had_other_type = _setting(tokens, extras[0]) not in (None, 'Fade')
+            cur = 0.0 if had_other_type else _read_seconds(tokens, main_key)
+            val = min(dur, max(target / 1000.0, cur))
+            for k in extras:
                 tokens = _drop_setting(tokens, k)
-            _put_setting(tokens, 'T_TEXTCTRL_Fadeout', f'{out:.2f}')
-            try:
-                fin = float(_setting(tokens, 'T_TEXTCTRL_Fadein') or 0)
-            except ValueError:
-                fin = 0.0
-            if fin + out > dur:
-                _put_setting(tokens, 'T_TEXTCTRL_Fadein', f'{max(0.0, dur - out):.2f}')
+            oth = _read_seconds(tokens, other_key)
+            if val + oth > dur > 0:
+                k = dur / (val + oth)
+                val, oth = val * k, oth * k
+                _put_setting(tokens, other_key, f'{oth:.2f}')
+            _put_setting(tokens, main_key, f'{val:.2f}')
             text = ','.join(tokens)
             if text not in text_idx:
                 text_idx[text] = len(effect_db)
@@ -661,21 +704,35 @@ def apply_end_fade(merged_element_effects, effect_db, total_ms, fade_ms):
             memo[key] = text_idx[text]
         eff['ref'] = str(memo[key])
         count += 1
-
-    for me in merged_element_effects.values():
-        if me.get('type') == 'timing':
-            continue
-        for layer in me['layers']:
-            for eff in layer['effects']:
-                fade(eff)
-        for sub in me['submodels'].values():
-            for eff in sub['effects']:
-                fade(eff)
-        for strand in me['strands'].values():
-            for layer in strand['layers']:
-                for eff in layer['effects']:
-                    fade(eff)
     return count
+
+
+def apply_end_fade(merged_element_effects, effect_db, total_ms, fade_ms):
+    """Fade the lights to black over the last fade_ms of the sequence."""
+    return apply_fade(_model_effects(merged_element_effects), effect_db,
+                      'out', total_ms, fade_ms)
+
+
+def apply_clip_transition_fades(clip_data, fade_in_ms, fade_out_ms):
+    """
+    Fade-out / fade-in between songs: fade this clip's lights in over its
+    first fade_in_ms and out over its last fade_out_ms (clip-local times),
+    then register any new EffectDB entries so the merge copies them.
+    """
+    n = 0
+    if fade_out_ms > 0:
+        n += apply_fade(_model_effects(clip_data['elements']), clip_data['effect_db'],
+                        'out', clip_data['duration_ms'], fade_out_ms)
+    if fade_in_ms > 0:
+        n += apply_fade(_model_effects(clip_data['elements']), clip_data['effect_db'],
+                        'in', 0, fade_in_ms)
+    if n:
+        for eff in _model_effects(clip_data['elements']):
+            try:
+                clip_data['used_effects_refs'].add(int(eff['ref']))
+            except (KeyError, ValueError):
+                pass
+    return n
 
 
 def merge_clips_to_xsq(clips_data, output_path, media_file_path,
@@ -1014,7 +1071,7 @@ def loudness_gain_db(path, target=LOUDNESS_TARGET_LUFS):
 
 
 def cut_audio(input_path, start_ms, end_ms, output_path, gain_db=0.0,
-              limiter=False, fade_out_ms=0):
+              limiter=False, fade_out_ms=0, fade_in_ms=0):
     """
     Cut a segment of audio using ffmpeg, optionally applying a gain.
     The gain is measured on the whole song (not the clip) so each song's
@@ -1030,9 +1087,12 @@ def cut_audio(input_path, start_ms, end_ms, output_path, gain_db=0.0,
         filters.append(f'volume={gain_db:.2f}dB')
     if limiter:
         filters.append('alimiter=limit=0.891:level=0:latency=1')  # ≈ -1 dBFS
+    # -ss is an output option here, so filters see the *source file's*
+    # timestamps: fade start times must be given in source time.
+    if fade_in_ms > 0:
+        f = min(fade_in_ms, end_ms - start_ms) / 1000.0
+        filters.append(f'afade=t=in:st={start_s:.3f}:d={f:.3f}')
     if fade_out_ms > 0:
-        # -ss is an output option here, so filters see the *source file's*
-        # timestamps: the fade start must be given in source time.
         f = min(fade_out_ms, end_ms - start_ms) / 1000.0
         filters.append(f'afade=t=out:st={start_s + max(0.0, duration_s - f):.3f}:d={f:.3f}')
 
@@ -1154,7 +1214,7 @@ def cut_video(input_path, start_ms, end_ms, output_path):
 # ─── Main Build Orchestrator ───────────────────────────────────────────
 
 def build_mashup(clips_config, output_dir, mashup_name='mashup',
-                 normalize_audio=True, fade_out_ms=0):
+                 normalize_audio=True, fade_out_ms=0, fade_between_ms=0):
     """
     Build a mashup from clip configurations.
 
@@ -1165,6 +1225,10 @@ def build_mashup(clips_config, output_dir, mashup_name='mashup',
             - end_ms: end time in milliseconds
         output_dir: directory to write output files
         mashup_name: name for the output files
+        fade_out_ms: fade music + lights to black at the very end
+        fade_between_ms: total length of the fade between songs — the
+            outgoing song fades out over the first half, the next song
+            fades in over the second half (no overlap)
 
     Returns:
         dict with output file paths and metadata.
@@ -1179,6 +1243,9 @@ def build_mashup(clips_config, output_dir, mashup_name='mashup',
     # Step 1: Parse all sequences and extract clips
     clips_data = []
     audio_segments = []
+    n_clips = len(clips_config)
+    half_between = max(0, int(fade_between_ms)) // 2
+    faded_between = 0
 
     for i, clip_cfg in enumerate(clips_config):
         pct = int((i / len(clips_config)) * 60)
@@ -1198,6 +1265,18 @@ def build_mashup(clips_config, output_dir, mashup_name='mashup',
         clip_data = extract_clip_effects(parser, start_ms, end_ms)
         clips_data.append(clip_data)
 
+        # Fade out → fade in between songs: half the total each side,
+        # capped so a short clip can still fit both its fades
+        clip_len = end_ms - start_ms
+        fade_in = half_between if (i > 0 and n_clips > 1) else 0
+        fade_out = half_between if i < n_clips - 1 else 0
+        if fade_in and fade_out:
+            fade_in = fade_out = min(half_between, clip_len // 2)
+        else:
+            fade_in, fade_out = min(fade_in, clip_len), min(fade_out, clip_len)
+        if fade_in or fade_out:
+            faded_between += apply_clip_transition_fades(clip_data, fade_in, fade_out)
+
         # Ending fade lives inside the last clip, clear of its crossfade
         seg_fade = 0
         if fade_out_ms > 0 and i == len(clips_config) - 1:
@@ -1216,7 +1295,8 @@ def build_mashup(clips_config, output_dir, mashup_name='mashup',
             if normalize_audio:
                 print(f"     loudness gain {gain:+.1f} dB"
                       f"{' (with limiter)' if limit else ''}")
-            cut_audio(media, start_ms, end_ms, seg_path, gain, limit, seg_fade)
+            cut_audio(media, start_ms, end_ms, seg_path, gain, limit,
+                      fade_out_ms=max(seg_fade, fade_out), fade_in_ms=fade_in)
             audio_segments.append(seg_path)
             clip_data['gain_db'] = round(gain, 1)
         else:
@@ -1270,4 +1350,6 @@ def build_mashup(clips_config, output_dir, mashup_name='mashup',
         'normalized': bool(normalize_audio),
         'fade_out_ms': fade_out_ms,
         'effects_faded': faded or 0,
+        'fade_between_ms': half_between * 2 if n_clips > 1 else 0,
+        'effects_faded_between': faded_between,
     }

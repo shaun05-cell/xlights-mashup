@@ -239,6 +239,25 @@
       width: 140px;
     }
     .mashup-header input[type="number"] { width: 70px; }
+    .mashup-header select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .mashup-header select:focus { border-color: var(--accent-blue); }
+    .mashup-header input:disabled { opacity: 0.4; }
+    .trans-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; font-size: 14px; }
+    .trans-row > label:first-child { min-width: 175px; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+    .trans-row small { color: var(--text-dim); font-size: 12px; }
+    .trans-row input[type="number"] {
+      width: 64px; background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 4px 6px; font-size: 13px;
+    }
+    .trans-row input:disabled { opacity: 0.4; }
     .mashup-header input:focus { border-color: var(--accent-blue); }
 
     .mashup-timeline {
@@ -973,10 +992,15 @@
           <input type="text" id="mashupName" value="MyMashup"
                  placeholder="Mashup name">
         </label>
-        <label>
-          Crossfade (ms):
-          <input type="number" id="crossfadeMs" value="0"
-                 min="0" max="5000" step="100">
+        <label title="How one song changes to the next">
+          Transition:
+          <select id="transType">
+            <option value="cut">Cut</option>
+            <option value="crossfade">Crossfade</option>
+            <option value="fade">Fade out → in</option>
+          </select>
+          <input type="number" id="transLen" value="2" min="0.1" max="20" step="0.1"
+                 style="width:60px" disabled> s
         </label>
         <label title="Longest the whole mashup may be, e.g. 5:00 (or 5 for five minutes). Leave empty for no limit.">
           Max length:
@@ -1585,7 +1609,7 @@
     }
 
     function updateTotals() {
-      const crossfade = parseInt(document.getElementById('crossfadeMs').value) || 0;
+      const crossfade = getTransition().crossfade_ms;
       let total = 0;
       mashupClips.forEach(c => { total += c.end_ms - c.start_ms; });
       if (crossfade > 0 && mashupClips.length > 1) {
@@ -1671,7 +1695,9 @@
 
       const payload = {
         name,
-        crossfade_ms: parseInt(document.getElementById('crossfadeMs').value) || 0,
+        crossfade_ms: getTransition().crossfade_ms,
+        transition: getTransition().type,
+        fade_between_ms: getTransition().fade_between_ms,
         max_length_ms: getMaxLengthMs(),
         // Re-saving the mashup you loaded overwrites it without asking
         overwrite: safeId(name) === currentSaveId,
@@ -1716,7 +1742,7 @@
       if (!confirmDiscard()) return;
       mashupClips = [];
       document.getElementById('mashupName').value = 'MyMashup';
-      document.getElementById('crossfadeMs').value = 0;
+      setTransition('cut', 0);
       document.getElementById('maxLength').value = '';
       document.getElementById('fadeOutOn').checked = true;
       document.getElementById('fadeOutSec').value = 3;
@@ -1807,7 +1833,8 @@
 
         mashupClips = clips;
         document.getElementById('mashupName').value = proj.name || id;
-        document.getElementById('crossfadeMs').value = proj.crossfade_ms || 0;
+        if (proj.transition === 'fade') setTransition('fade', proj.fade_between_ms);
+        else setTransition(proj.crossfade_ms ? 'crossfade' : 'cut', proj.crossfade_ms || 0);
         document.getElementById('maxLength').value =
           proj.max_length_ms ? formatShort(proj.max_length_ms) : '';
         document.getElementById('normalizeAudio').checked = proj.normalize_audio !== false;
@@ -1875,7 +1902,8 @@
     });
 
     document.getElementById('mashupName').addEventListener('input', markDirty);
-    document.getElementById('crossfadeMs').addEventListener('input', markDirty);
+    document.getElementById('transType').addEventListener('change', () => { onTransTypeChange(); markDirty(); });
+    document.getElementById('transLen').addEventListener('input', () => { markDirty(); updateTotals(); });
     document.getElementById('maxLength').addEventListener('input', () => { markDirty(); updateTotals(); });
     document.getElementById('maxLength').addEventListener('change', e => {
       // tidy the display, e.g. "5" -> "5:00"
@@ -1946,14 +1974,12 @@
           <input type="checkbox" id="autoOnline" ${autoPrefs.online ? 'checked' : ''}>
           Look up lyrics online for sequences without a lyric track <small>(LRCLIB)</small>
         </label>
-        <label class="auto-opt">
-          <input type="checkbox" id="autoXfade" ${autoPrefs.auto_xfade ? 'checked' : ''}>
-          Pick the crossfade length for me <small>(otherwise uses your ${parseInt(document.getElementById('crossfadeMs').value) || 0} ms)</small>
-        </label>
+        ${transitionOptionsHTML('auto')}
         <div class="modal-actions">
           <button class="close-btn" onclick="closeAutomateDialog()">Cancel</button>
           <button class="go-btn" onclick="runAutomate()">✨ Analyze</button>
         </div>`;
+      syncTransOptions('auto');
       document.getElementById('autoOverlay').classList.add('active');
     }
 
@@ -1972,7 +1998,7 @@
         autoPrefs.order_mode = orderEl ? orderEl.value : 'best';
         autoPrefs.allow_reuse = document.getElementById('autoReuse').checked;
         autoPrefs.online = document.getElementById('autoOnline').checked;
-        autoPrefs.auto_xfade = document.getElementById('autoXfade').checked;
+        if (!readTransitionOptions('auto')) return;
 
         // The dialog's max length is the same setting as the header field
         const maxInput = document.getElementById('maxLength');
@@ -2003,8 +2029,7 @@
         allow_reuse: autoPrefs.allow_reuse,
         max_total_s: maxMs ? maxMs / 1000 : null,
         online: autoPrefs.online,
-        crossfade_ms: autoPrefs.auto_xfade || mashupClips.length < 2
-          ? null : (parseInt(document.getElementById('crossfadeMs').value) || 0),
+        ...transitionRequest(),
         clips: mashupClips.map(c => ({ xsq_path: c.seq.path })),
       };
       // Remember exactly which clips were analysed so Apply maps back correctly
@@ -2097,7 +2122,7 @@
         <p class="plan-summary">
           ${plan.clips.length} clip${plan.clips.length === 1 ? '' : 's'} · about ${formatTime(Math.max(0, total))}
           ${plan.max_ms ? ` of ${formatShort(plan.max_ms)} max` : ''}
-          ${plan.clips.length > 1 ? `· crossfade ${plan.crossfade_ms} ms${plan.crossfade_auto ? ' (≈ 2 beats)' : ''}` : ''}
+          ${plan.clips.length > 1 ? '· ' + transitionLabel(plan) : ''}
           ${plan.order_mode === 'scramble'
             ? '· <span style="color:var(--accent-gold)">🔀 scrambled order</span>'
             : plan.reordered ? '· <span style="color:var(--accent-gold)">🎯 order picked for best flow</span>' : ''}
@@ -2144,7 +2169,9 @@
         };
       });
       if (plan.clips.length > 1) {
-        document.getElementById('crossfadeMs').value = plan.crossfade_ms;
+        if (plan.transition === 'fade') setTransition('fade', plan.fade_between_ms);
+        else if (plan.transition === 'cut') setTransition('cut', 0);
+        else setTransition('crossfade', plan.crossfade_ms);
       }
       renderTimeline();
       markDirty();
@@ -2220,6 +2247,7 @@
           <input type="text" class="text-in" id="genMax" style="width:80px" placeholder="none"
                  value="${escHtml(document.getElementById('maxLength').value)}">
           <small>e.g. 5:00</small></label>
+        ${transitionOptionsHTML('gen')}
         <label class="auto-opt"><input type="checkbox" id="genReuse" ${genPrefs.allow_reuse ? 'checked' : ''}>
           Let songs come back <small>(e.g. open and close on the same song)</small></label>
         ${pins.length ? `<div class="gen-list">📌 <b>Always included</b> (songs you added yourself):
@@ -2237,6 +2265,7 @@
         b.onclick = () => { excludedPaths.delete(exList[+b.dataset.unexclude]); openGenerateDialog(); };
       });
       updateGenMatchCount();
+      syncTransOptions('gen');
     }
 
     const GENRE_CATS = ['Pop', 'Rock', 'Country', 'Dance', 'Hip-Hop & R&B', 'Jazz & Classics', 'Orchestral', 'A Cappella'];
@@ -2294,6 +2323,7 @@
         genPrefs.count = parseInt(document.getElementById('genCount').value);
         genPrefs.target_s = parseInt(document.getElementById('genTarget').value);
         genPrefs.allow_reuse = document.getElementById('genReuse').checked;
+        if (!readTransitionOptions('gen')) return;
         const maxInput = document.getElementById('maxLength');
         maxInput.value = document.getElementById('genMax').value.trim();
         if (maxInput.value && !getMaxLengthMs()) {
@@ -2326,7 +2356,7 @@
             max_total_s: maxMs ? maxMs / 1000 : null,
             allow_reuse: genPrefs.allow_reuse,
             online: genPrefs.online,
-            crossfade_ms: null,
+            ...transitionRequest(),
           }),
         });
         const data = await res.json();
@@ -2347,7 +2377,7 @@
 
       const mashupName = document.getElementById('mashupName').value.trim()
         || 'mashup';
-      const crossfade = parseInt(document.getElementById('crossfadeMs').value) || 0;
+      const trans = getTransition();
 
       // Show progress modal
       const overlay = document.getElementById('buildOverlay');
@@ -2365,7 +2395,8 @@
 
       const payload = {
         name: mashupName,
-        crossfade_ms: crossfade,
+        crossfade_ms: trans.crossfade_ms,
+        fade_between_ms: trans.fade_between_ms,
         normalize_audio: document.getElementById('normalizeAudio').checked,
         fade_out_ms: getFadeOutMs(),
         clips: mashupClips.map(c => ({
@@ -2406,6 +2437,8 @@
           </p>
           ${r.normalized ? `<p style="font-size:12px;">🔊 Loudness evened out to −16 LUFS
             (per clip: ${(r.gains_db || []).map(g => g == null ? '—' : (g > 0 ? '+' : '') + g + ' dB').join(', ')})</p>` : ''}
+          ${r.fade_between_ms ? `<p style="font-size:12px;">🌗 Between songs: ${(r.fade_between_ms / 2000).toFixed(1)} s fade out,
+            then ${(r.fade_between_ms / 2000).toFixed(1)} s fade in (music and lights; ${r.effects_faded_between} effect fades)</p>` : ''}
           ${r.fade_out_ms ? `<p style="font-size:12px;">🌅 Music and lights fade out over the last
             ${(r.fade_out_ms / 1000).toFixed(1)}s (${r.effects_faded} effect${r.effects_faded === 1 ? '' : 's'} given a Fade Out)</p>` : ''}
           ${r.videos_retimed ? `<p style="font-size:12px;">🎞 ${r.videos_retimed} video effect${r.videos_retimed === 1 ? '' : 's'}
@@ -2482,6 +2515,130 @@
       return null;
     }
 
+    // ─── Transition between songs ─────────────────────────────────────
+    // 'cut' | 'crossfade' (songs overlap) | 'fade' (fade out → fade in; the
+    // length is the whole transition, split evenly between out and in)
+    const TRANS_DEFAULT_S = { crossfade: 0.8, fade: 2 };
+    const transLenByType = { ...TRANS_DEFAULT_S };
+
+    function getTransition() {
+      const type = document.getElementById('transType').value;
+      const sec = parseFloat(document.getElementById('transLen').value);
+      const ms = type === 'cut' || !isFinite(sec) || sec <= 0 ? 0 : Math.round(Math.min(20, sec) * 1000);
+      const t = ms ? type : 'cut';
+      return { type: t, ms, crossfade_ms: t === 'crossfade' ? ms : 0, fade_between_ms: t === 'fade' ? ms : 0 };
+    }
+
+    function setTransition(type, ms) {
+      if (!['crossfade', 'fade'].includes(type) || !(ms > 0)) type = 'cut';
+      const sel = document.getElementById('transType');
+      sel.value = type;
+      sel.dataset.prev = type;
+      if (type !== 'cut') {
+        transLenByType[type] = +(ms / 1000).toFixed(2);
+        document.getElementById('transLen').value = transLenByType[type];
+      }
+      syncTransitionUI();
+    }
+
+    function onTransTypeChange() {
+      const sel = document.getElementById('transType');
+      const len = document.getElementById('transLen');
+      const prev = sel.dataset.prev;
+      if (prev && prev !== 'cut' && parseFloat(len.value) > 0) transLenByType[prev] = parseFloat(len.value);
+      if (sel.value !== 'cut') len.value = transLenByType[sel.value] ?? TRANS_DEFAULT_S[sel.value];
+      sel.dataset.prev = sel.value;
+      syncTransitionUI();
+    }
+
+    function syncTransitionUI() {
+      const type = document.getElementById('transType').value;
+      const len = document.getElementById('transLen');
+      len.disabled = type === 'cut';
+      len.title = type === 'fade'
+        ? 'Total fade time: the old song fades out over the first half, the new song fades in over the second half'
+        : type === 'crossfade' ? 'How long the two songs overlap' : '';
+      updateTotals();
+    }
+
+    function transitionLabel(plan) {
+      if (plan.transition === 'fade') {
+        const half = (plan.fade_between_ms / 2000).toFixed(1);
+        return `fade out → in ${(plan.fade_between_ms / 1000).toFixed(1)} s (${half} s + ${half} s)`;
+      }
+      if (plan.transition === 'cut') return 'straight cuts';
+      return `crossfade ${plan.crossfade_ms} ms${plan.crossfade_auto ? ' (≈ 2 beats)' : ''}`;
+    }
+
+    // Shared "Between songs" choice for the Automate and Generate dialogs
+    const transPrefs = { trans: 'crossfade', xf_auto: true, xf_len: 0.8, fade_len: 2 };
+    try { Object.assign(transPrefs, JSON.parse(localStorage.getItem('transPrefs') || '{}')); } catch (e) {}
+
+    function transitionOptionsHTML(p) {
+      const tp = transPrefs;
+      const on = v => tp.trans === v ? 'checked' : '';
+      const sync = `syncTransOptions('${p}')`;
+      return `
+        <div class="gen-group">Between songs</div>
+        <div class="trans-row">
+          <label><input type="radio" name="${p}Trans" value="crossfade" ${on('crossfade')} onchange="${sync}">
+            <b>Crossfade</b></label>
+          <label><input type="checkbox" id="${p}XfAuto" ${tp.xf_auto ? 'checked' : ''} onchange="${sync}">
+            pick the length for me <small>(≈ 2 beats)</small></label>
+          <span>or <input type="number" id="${p}XfLen" min="0.1" max="20" step="0.1" value="${tp.xf_len}"> s</span>
+        </div>
+        <div class="trans-row">
+          <label><input type="radio" name="${p}Trans" value="fade" ${on('fade')} onchange="${sync}">
+            <b>Fade out → fade in</b></label>
+          <span>total <input type="number" id="${p}FadeLen" min="0.2" max="20" step="0.1" value="${tp.fade_len}"> s</span>
+          <small>half fading the old song out, half fading the new one in</small>
+        </div>
+        <div class="trans-row">
+          <label><input type="radio" name="${p}Trans" value="cut" ${on('cut')} onchange="${sync}">
+            <b>Cut</b></label>
+          <small>straight from one song to the next</small>
+        </div>`;
+    }
+
+    function syncTransOptions(p) {
+      const t = (document.querySelector(`input[name="${p}Trans"]:checked`) || {}).value;
+      const auto = document.getElementById(p + 'XfAuto');
+      if (!auto) return;
+      auto.disabled = t !== 'crossfade';
+      document.getElementById(p + 'XfLen').disabled = t !== 'crossfade' || auto.checked;
+      document.getElementById(p + 'FadeLen').disabled = t !== 'fade';
+    }
+
+    // Read the dialog's choice into transPrefs; false (with a message) if invalid
+    function readTransitionOptions(p) {
+      const t = (document.querySelector(`input[name="${p}Trans"]:checked`) || {}).value || 'crossfade';
+      const xfAuto = document.getElementById(p + 'XfAuto').checked;
+      const xfLen = parseFloat(document.getElementById(p + 'XfLen').value);
+      const fadeLen = parseFloat(document.getElementById(p + 'FadeLen').value);
+      if (t === 'crossfade' && !xfAuto && !(xfLen > 0 && xfLen <= 20)) {
+        showToast('Enter a crossfade length between 0.1 and 20 seconds.', 'warn');
+        return false;
+      }
+      if (t === 'fade' && !(fadeLen >= 0.2 && fadeLen <= 20)) {
+        showToast('Enter a total fade length between 0.2 and 20 seconds.', 'warn');
+        return false;
+      }
+      Object.assign(transPrefs, { trans: t, xf_auto: xfAuto,
+        xf_len: xfLen > 0 ? xfLen : transPrefs.xf_len, fade_len: fadeLen > 0 ? fadeLen : transPrefs.fade_len });
+      try { localStorage.setItem('transPrefs', JSON.stringify(transPrefs)); } catch (e) {}
+      return true;
+    }
+
+    // Transition fields for /api/automate and /api/generate
+    function transitionRequest() {
+      const tp = transPrefs;
+      return {
+        transition: tp.trans,
+        crossfade_ms: tp.trans === 'crossfade' && !tp.xf_auto ? Math.round(tp.xf_len * 1000) : null,
+        fade_between_ms: tp.trans === 'fade' ? Math.round(tp.fade_len * 1000) : null,
+      };
+    }
+
     function getFadeOutMs() {
       if (!document.getElementById('fadeOutOn').checked) return 0;
       const s = parseFloat(document.getElementById('fadeOutSec').value);
@@ -2511,9 +2668,7 @@
       return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    // Update totals when crossfade changes
-    document.getElementById('crossfadeMs')
-      .addEventListener('input', updateTotals);
+    syncTransitionUI();
   </script>
 </body>
 </html>

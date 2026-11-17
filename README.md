@@ -9,7 +9,8 @@ A local web app that builds **mashup sequences** from an existing [xLights](http
 - **Timeline editing** — two-handle trim slider per clip, drag-to-reorder, drag songs in from the library, use a song more than once
 - **✨ Automate** — listens to the songs and reads each sequence's lyric timing track to find the chorus and phrase endings; cuts land on bar lines and never mid-word; running order by best flow (tempo, key, energy), scrambled, or kept as-is
 - **🎲 Generate** — classifies your library (themes from lyrics, genres from MusicBrainz, moods from the audio) and picks songs by category that work together; every generation is different, and it respects songs you add or remove
-- **Build** — loudness levelling (−16 LUFS), Video effects re-timed instead of cut, crossfades, a fade-out ending using xLights' Fade Out transition, one-click zip download
+- **Transitions** — crossfade, fade out → fade in (you set the total; half fades the old song out, half fades the new one in — music and lights), or a straight cut
+- **Build** — loudness levelling (−16 LUFS), Video effects re-timed instead of cut, a fade-out ending using xLights' Fade Out transition, one-click zip download
 - **Save / load** mashup projects, maximum-length limit, built-in help page with screenshots
 
 The app only **reads** your show — everything it creates goes to its own `output/` folder.

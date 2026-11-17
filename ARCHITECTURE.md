@@ -301,6 +301,15 @@ The window is capped to fit inside the last clip, clear of its crossfade. Verifi
 
 Limitation: an effect that *starts* inside the window begins at full brightness, then fades (xLights fades only ramp to/from zero).
 
+### 6.8 Fade between songs (fade out → fade in)
+
+Build option `fade_between_ms` = the **whole** transition; each join gets half: the outgoing clip fades out over its last `F/2`, the incoming clip fades in over its first `F/2`. No overlap, so the mashup length is unchanged (Σ clip durations). First clip: no fade-in; last clip: no fade-out (the ending fade handles that). Each half is capped at half the clip's length.
+
+- **Lights** — `apply_clip_transition_fades` runs per clip on clip-local times, before the merge, using the shared `apply_fade(effects, effect_db, 'in'|'out', edge_ms, fade_ms)` (also used by the ending fade). Fade-in mirrors fade-out: effects starting at the clip start fade in over the whole half; effects starting inside the window fade in until its end. `T_TEXTCTRL_Fadein`, with `T_CHOICE_In_Transition_Type` and its adjust/reverse keys removed (Fade is the default). If fade-in + fade-out exceed an effect's length, both are scaled down proportionally. New EffectDB entries are added to the clip's `used_effects_refs` so the merge copies them.
+- **Audio** — `cut_audio(…, fade_in_ms, fade_out_ms)` adds `afade=t=in` / `afade=t=out` (source-time `st`, as in §6.7).
+- Can be combined with a crossfade at the API level; the UI offers one transition type at a time.
+- Verified: audio at each join −23 → −45 dB (end of old song) → −41 → −18 dB (new song up); all effects ending/starting at the joins got Fade Out / Fade In (226 effects for 3 clips); start, end and crossfade-only builds unchanged.
+
 ---
 
 ## 7. Media Resolution
@@ -348,7 +357,7 @@ Slots = (song, candidate). Transition cost: tempo `8·min|ln ratio|` (allowing �
 - **Max length** is a hard cap; time is reserved for songs not yet placed so nothing gets squeezed out if they can all fit. If `n × target > 0.9 × max`, target shrinks to `max/n × 0.85` (min 8 s). Songs that still can't fit are reported as dropped.
 - Soft total = `slots × target × (1.5 with reuse)`; exceeding it costs `3 × excess/target`.
 - **Order modes** (`order_mode`): `best` — the beam search picks the order for the smoothest flow (tempo, key, energy) and may bring songs back; `scramble` — `_scramble` shuffles the clip slots (different every run, avoids the same song back-to-back and the current order), then the search only picks cuts; `keep` — the user's order, cuts only. Song returns apply to `best` only. Legacy `allow_reorder=false` maps to `keep`.
-- Auto crossfade ≈ 2 beats (median), 400–1500 ms. With crossfade X, internal cuts move by X/2 so the fade is centred on the bar line.
+- **Transition** (`transition`): `crossfade` (auto ≈ 2 beats (median), 400–1500 ms, or `crossfade_ms`), `fade` (fade out → fade in, total `fade_between_ms`, default 2000) or `cut`. Internal cuts move outward by half the transition (X/2 for a crossfade, F/2 for a fade) so it's centred on the bar line rather than cutting into the last sung line. A fade adds time, so the search charges `join_ms = F` per song change against the max length (and the target-length shrink uses `max − (n−1)·F`); `total_ms` includes it.
 
 Typical runtime: 0.2–0.3 s for 6 songs once analysed.
 
@@ -410,14 +419,16 @@ Long tasks run in background threads; library scan and generate share a lock (on
 
 ```jsonc
 // POST /api/build_mashup
-{ "name": "MyMashup", "crossfade_ms": 900, "normalize_audio": true, "fade_out_ms": 3000,
+{ "name": "MyMashup", "crossfade_ms": 0, "fade_between_ms": 2000, "normalize_audio": true, "fade_out_ms": 3000,
   "clips": [{ "xsq_path": "<show>\\Sequences\\Let It Go\\Let It Go.xsq", "start_ms": 45000, "end_ms": 88000 }] }
 // → result: xsq_path, audio_path, duration_ms, num_clips, download_zip, download_xsq, download_audio,
-//           gains_db[], normalized, videos_retimed, video_notes[], fade_out_ms, effects_faded
+//           gains_db[], normalized, videos_retimed, video_notes[], fade_out_ms, effects_faded,
+//           fade_between_ms, effects_faded_between
 
 // POST /api/automate
 { "clips": [{ "xsq_path": "..." }], "target_s": 30, "order_mode": "best|scramble|keep", "allow_reuse": true,
-  "max_total_s": 300, "online": true, "crossfade_ms": null /* null = auto */ }
+  "max_total_s": 300, "online": true,
+  "transition": "crossfade|fade|cut", "crossfade_ms": null /* null = auto */, "fade_between_ms": 2000 }
 // → plan: clips[{xsq_path, name, visit, start_ms, end_ms, note, bpm, key, camelot, clean_cuts,
 //          lyrics_source, beat_source}], transitions[{text, verdict}], crossfade_ms, crossfade_auto,
 //          reordered, order_mode, total_ms, max_ms, target_used_s, target_shrunk, dropped[], all_fit, revisits
@@ -430,7 +441,8 @@ Long tasks run in background threads; library scan and generate share a lock (on
 ### Saved project (`saved_mashups/<id>.json`)
 
 ```jsonc
-{ "version": 1, "name": "...", "saved_at": 1794193531.8, "crossfade_ms": 900, "max_length_ms": 300000,
+{ "version": 1, "name": "...", "saved_at": 1794193531.8, "transition": "fade", "crossfade_ms": 0,
+  "fade_between_ms": 2000, "max_length_ms": 300000,
   "normalize_audio": true, "fade_out_ms": 3000, "excluded": ["...xsq"],
   "clips": [{ "xsq_path": "...", "seq_name": "...", "start_ms": 0, "end_ms": 30000,
               "note": "Verse 1 → Chorus 1 · …", "origin": "user|generated" }] }
@@ -446,13 +458,13 @@ Single file, inline CSS/JS, dark theme. Colours are CSS variables on `:root`.
 
 **Left panel — library:** search (name, folder, category), category filter, cards with category chips (green = theme, purple = genre, gold = mood; hover shows why), **✎ tags** editor, **+ Add**, drag a card into the timeline.
 
-**Header:** name, crossfade (ms), **Max length** (`5:00` or `5` = minutes), ➕ New / 📂 Load / 💾 Save (Ctrl+S), "● unsaved changes / ✓ saved".
+**Header:** name, **Transition** (Cut / Crossfade / Fade out → in + length in seconds; separate remembered length per type), **Max length** (`5:00` or `5` = minutes), ➕ New / 📂 Load / 💾 Save (Ctrl+S), "● unsaved changes / ✓ saved".
 
 **Timeline clip cards:** ⠿ drag handle (also ↑/↓ when focused), ⧉ use another part of this song, ✕ remove, two-handle trim slider (green start / red end, 10 ms steps, ≥ 100 ms clip, last-moved handle on top), editable Start/End, duration, ✨ note from Automate/Generate (cleared when you trim by hand).
 
 **Bottom bar:** clip count, total (with "/ max" or red "over by"), Even out loudness, Fade out ending (seconds), 🎲 Generate, ✨ Automate, 🔨 Build.
 
-**Dialogs:** Load (list with clip names, delete), Automate (options incl. running order 🎯 Best flow / 🔀 Scramble / 📌 Keep my order → progress → preview, with *Scramble again* in scramble mode → Apply), Generate (first-run library scan → category chips with live match count, count, length, max, reuse, pinned/excluded lists → preview with picked songs → *Generate another* / Apply), Edit categories, Build (progress → loudness/video/fade summary → **📦 Download all (.zip)**).
+**Dialogs:** Load (list with clip names, delete), Automate (options incl. Between songs — crossfade / fade out → in / cut — and running order 🎯 Best flow / 🔀 Scramble / 📌 Keep my order → progress → preview, with *Scramble again* in scramble mode → Apply), Generate (first-run library scan → category chips with live match count, count, length, max, reuse, pinned/excluded lists → preview with picked songs → *Generate another* / Apply), Edit categories, Build (progress → loudness/video/fade summary → **📦 Download all (.zip)**).
 
 **State rules:**
 - Clips have `origin`: `user` (added by you — pinned for Generate) or `generated`.
@@ -550,6 +562,7 @@ First use of 🎲 Generate offers a one-time library scan (≈ 4–5 min with on
 | 2026-11-12 | `app.py` opens the browser automatically when the server is ready (`--no-browser` to skip); a second launch reuses the running copy |
 | 2026-11-12 | Show paths moved to git-ignored `config.json` with first-launch folder pickers; build window shows the output path relative to the app folder |
 | 2026-11-12 | Cleanup: removed old ad-hoc scripts (`quick_check.py`, `test_resolve.py`) and test builds |
+| 2026-11-16 | Fade between songs (fade out → fade in, total length split evenly) for builds, Automate, Generate, saved mashups and the help page; header crossfade box replaced by a Transition selector |
 | 2026-11-12 | `install.py`: standard-library installer (version check, ensurepip, pip install -r requirements.txt with `--user` fallback, import + ffmpeg verification, `--check` mode) |
 | 2026-11-12 | Supporting modules moved to the `core/` package (`app.py` stays the entry point); loudness cache stays in the app folder |
 | 2026-11-12 | Help page (`/help`) with 20 screenshots captured from the running app (Playwright driving Edge, headless). Re-take screenshots after visible UI changes so the guide stays accurate |

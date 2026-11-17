@@ -140,6 +140,24 @@ CONFIG_HELP = ("Show folder not set up. Copy config.example.json to config.json 
                "\"media_dir\" (your music/video folder), then restart the app.")
 
 
+def _transition_opts(data):
+    """
+    Transition between songs from a request:
+      transition      'crossfade' | 'fade' | 'cut'  (default 'crossfade')
+      crossfade_ms    overlap for 'crossfade' (None = let Automate choose)
+      fade_between_ms total fade-out → fade-in length for 'fade' (half each side)
+    """
+    t = data.get('transition')
+    t = t if t in ('crossfade', 'fade', 'cut') else 'crossfade'
+    xf = data.get('crossfade_ms')
+    fb = data.get('fade_between_ms')
+    return {
+        'transition': t,
+        'crossfade_ms': None if xf is None else max(0, min(10000, int(xf))),
+        'fade_between_ms': max(0, min(20000, int(fb))) if fb else None,
+    }
+
+
 def safe_filename(name):
     """Sanitize a user-supplied name for use as a filename."""
     return "".join(c for c in name if c.isalnum() or c in ' -_').strip()
@@ -238,7 +256,8 @@ def api_build_mashup():
 
         result = build_mashup(clips_config, output_subdir, safe_name,
                               normalize_audio=bool(data.get('normalize_audio', True)),
-                              fade_out_ms=max(0, min(30000, int(data.get('fade_out_ms') or 0))))
+                              fade_out_ms=max(0, min(30000, int(data.get('fade_out_ms') or 0))),
+                              fade_between_ms=max(0, min(20000, int(data.get('fade_between_ms') or 0))))
 
         # Return paths relative to OUTPUT_DIR for download
         result['download_xsq'] = f'{safe_name}/{safe_name}.xsq'
@@ -324,6 +343,9 @@ def api_save_mashup():
             'name': name,
             'saved_at': time.time(),
             'crossfade_ms': int(data.get('crossfade_ms', 0)),
+            'transition': (data.get('transition')
+                           if data.get('transition') in ('crossfade', 'fade', 'cut') else None),
+            'fade_between_ms': max(0, min(20000, int(data.get('fade_between_ms') or 0))),
             'max_length_ms': (int(data['max_length_ms'])
                               if data.get('max_length_ms') else None),
             'clips': [{
@@ -384,6 +406,8 @@ def _run_automate(job_id, seqs, opts):
             online=opts['online'],
             crossfade_ms=opts['crossfade_ms'],
             order_mode=opts['order_mode'],
+            transition=opts['transition'],
+            fade_between_ms=opts['fade_between_ms'],
             progress=progress)
         job['status'] = 'done'
     except Exception as e:
@@ -408,7 +432,6 @@ def api_automate():
             return jsonify({'error': f'Unknown sequence or missing media: {p}'}), 400
         seqs.append(s.to_dict())
 
-    xf = data.get('crossfade_ms')
     opts = {
         'target_s': max(8, min(180, float(data.get('target_s', 30)))),
         'allow_reorder': bool(data.get('allow_reorder', True)),
@@ -416,7 +439,7 @@ def api_automate():
         'max_total_s': (max(10, float(data['max_total_s']))
                         if data.get('max_total_s') else None),
         'online': bool(data.get('online', True)),
-        'crossfade_ms': None if xf is None else max(0, int(xf)),
+        **_transition_opts(data),
         'order_mode': (data.get('order_mode')
                        if data.get('order_mode') in ('best', 'scramble', 'keep') else None),
     }
@@ -518,7 +541,6 @@ def api_library_categories():
 def api_generate():
     data = request.json or {}
     seq_by_path = _playable_seqs()
-    xf = data.get('crossfade_ms')
     opts = {
         'categories': [str(c) for c in data.get('categories', [])],
         'match_all': bool(data.get('match_all', True)),
@@ -530,7 +552,7 @@ def api_generate():
                         if data.get('max_total_s') else None),
         'allow_reuse': bool(data.get('allow_reuse', True)),
         'online': bool(data.get('online', True)),
-        'crossfade_ms': None if xf is None else max(0, int(xf)),
+        **_transition_opts(data),
     }
 
     def work(progress):

@@ -281,7 +281,7 @@
     <a class="sub" href="#trim">Trimming clips</a>
     <a class="sub" href="#reorder">Reordering</a>
     <a class="sub" href="#reuse">Using a song twice</a>
-    <a href="#settings">Name, crossfade &amp; max length</a>
+    <a href="#settings">Name, transition &amp; max length</a>
     <a href="#save-load">Saving &amp; loading</a>
     <a href="#automate">✨ Automate</a>
     <a class="sub" href="#automate-order">Running order</a>
@@ -291,6 +291,7 @@
     <a class="sub" href="#generate-edits">Your edits &amp; regenerating</a>
     <a href="#build">🔨 Build &amp; download</a>
     <a class="sub" href="#loudness">Even out loudness</a>
+    <a class="sub" href="#fade-between">Fade between songs</a>
     <a class="sub" href="#fade">Fade out ending</a>
     <a class="sub" href="#videos">Videos</a>
     <a href="#xlights">Into xLights</a>
@@ -356,7 +357,7 @@
         <tr><th>Area</th><th>What it's for</th></tr>
         <tr><td>Sequence Library (left)</td><td>Every sequence in your show. Search, filter by category, add songs.</td></tr>
         <tr><td>Mashup Timeline (right)</td><td>The songs in your mashup, top to bottom in playing order. Each card is one <em>clip</em> — a section of a song.</td></tr>
-        <tr><td>Top of the timeline</td><td>Mashup name, crossfade, maximum length, and <strong>New / Load / Save</strong>.</td></tr>
+        <tr><td>Top of the timeline</td><td>Mashup name, how songs change from one to the next, maximum length, and <strong>New / Load / Save</strong>.</td></tr>
         <tr><td>Bottom bar</td><td>Number of clips and total length, build options, and the <strong>Generate</strong>, <strong>Automate</strong> and <strong>Build</strong> buttons.</td></tr>
         <tr><td>Top right corner</td><td>How many sequences were found, and a link back to this help.</td></tr>
       </table>
@@ -464,15 +465,21 @@
 
     <!-- ═══════════════════════════════════════ Settings -->
     <section id="settings">
-      <h2>Name, crossfade &amp; max length</h2>
+      <h2>Name, transition &amp; max length</h2>
       <figure>
-        <img src="/static/help/07-header.png" alt="Timeline header with Name, Crossfade, Max length, New, Load and Save" loading="lazy">
+        <img src="/static/help/07-header.png" alt="Timeline header with Name, Transition set to Fade out to in for 2 seconds, Max length, New, Load and Save" loading="lazy">
         <figcaption>The settings at the top of the timeline.</figcaption>
       </figure>
       <table>
         <tr><th>Setting</th><th>What it does</th></tr>
         <tr><td>Name</td><td>The name of the mashup. Used for saving and for the files you build (letters, numbers, spaces, <code>-</code> and <code>_</code>).</td></tr>
-        <tr><td>Crossfade (ms)</td><td>How long each song overlaps the next, in milliseconds (<code>1000</code> = 1 second). The music fades from one song to the next, and both songs' lights play during the overlap. <code>0</code> = straight cut. ✨ Automate can choose this for you.</td></tr>
+        <tr><td>Transition</td><td>How one song changes to the next, plus its length in seconds:
+          <ul>
+            <li><strong>Cut</strong> — straight from one song to the next.</li>
+            <li><strong>Crossfade</strong> — the songs overlap: the music fades from one into the other and both songs' lights play during the overlap. The length is how long they overlap.</li>
+            <li><strong>Fade out → in</strong> — the old song fades out (music <em>and</em> lights), then the new one fades in, with no overlap. The length is the <em>whole</em> fade, split evenly: <code>2</code> s = 1 s fading out + 1 s fading in. See <a href="#fade-between">Fade between songs</a>.</li>
+          </ul>
+          ✨ Automate and 🎲 Generate can set this for you.</td></tr>
         <tr><td>Max length</td><td>The longest you want the whole mashup to be — type <code>5:00</code>, or just <code>5</code> for five minutes. Leave empty for no limit. Automate and Generate always stay under it.</td></tr>
       </table>
       <p>When a max length is set, the bottom bar shows the total against it, and turns red if your clips add up to
@@ -488,7 +495,7 @@
       <h2>Saving &amp; loading</h2>
       <ul>
         <li><strong>💾 Save</strong> (or <kbd>Ctrl</kbd>+<kbd>S</kbd>) saves the mashup under its <em>Name</em>: every
-          clip and its trim, the order, crossfade, max length and build options.</li>
+          clip and its trim, the order, transition, max length and build options.</li>
         <li>Next to <em>Mashup Timeline</em> you'll see <span class="good">● unsaved changes</span> or
           <strong>✓ saved</strong>.</li>
         <li><strong>📂 Load</strong> lists your saved mashups, newest first, with their songs. Click
@@ -524,7 +531,7 @@
       </ul>
 
       <figure class="narrow">
-        <img src="/static/help/10-automate-options.png" alt="Automate Mashup options: length per song, max length, running order, let songs come back, online lyrics, crossfade" loading="lazy">
+        <img src="/static/help/10-automate-options.png" alt="Automate Mashup options: length per song, max length, running order, let songs come back, online lyrics, and Between songs set to Fade out to fade in, 3 seconds" loading="lazy">
         <figcaption>Automate's options.</figcaption>
       </figure>
       <table>
@@ -534,7 +541,7 @@
         <tr><td>Running order</td><td>See <a href="#automate-order">Running order</a> below.</td></tr>
         <tr><td>Let songs come back</td><td>(Best flow only) A song may appear up to three times — e.g. open and close on the same song. It never plays the same part twice or the same song twice in a row, and only brings a song back when it improves the mashup.</td></tr>
         <tr><td>Look up lyrics online</td><td>For sequences without a lyric track, search LRCLIB (a free lyrics site). Only lyrics matching your MP3's length are used.</td></tr>
-        <tr><td>Pick the crossfade for me</td><td>Choose a crossfade of about two beats. Untick to keep the crossfade you've set.</td></tr>
+        <tr><td>Between songs</td><td><strong>Crossfade</strong> (tick <em>pick the length for me</em> for about two beats, or enter your own), <strong>Fade out → fade in</strong> (enter the total — half fading out, half fading in), or <strong>Cut</strong>. With a crossfade or a fade, the cut points are moved so the transition sits around the bar line instead of cutting into the last sung line. Your choice is copied to the <em>Transition</em> setting when you apply.</td></tr>
       </table>
 
       <h3 id="automate-order">Running order</h3>
@@ -553,7 +560,7 @@
         <figcaption>A Best flow suggestion: <em>Feliz Navidad</em> opens on its intro and returns later for its second chorus.</figcaption>
       </figure>
       <ul>
-        <li><strong>Top line</strong> — number of clips, total length (against your max), the crossfade, how the order
+        <li><strong>Top line</strong> — number of clips, total length (against your max), the transition between songs, how the order
           was chosen, and any return visits.</li>
         <li><strong>Each clip</strong> — the times used, the section (<em>Verse 1 → Chorus 1</em>), the first and last
           lyric line, and the song's tempo (BPM) and key.</li>
@@ -611,8 +618,8 @@
         <li><strong>all</strong> = songs must have every selected category (Christmas <em>and</em> Upbeat).
           <strong>any</strong> = songs with at least one (Halloween <em>or</em> Comedy). The count next to it shows how
           many songs match.</li>
-        <li><strong>Number of songs</strong>, <strong>Length per song</strong>, <strong>Max mashup length</strong>
-          and <strong>Let songs come back</strong> work as in Automate.</li>
+        <li><strong>Number of songs</strong>, <strong>Length per song</strong>, <strong>Max mashup length</strong>,
+          <strong>Between songs</strong> and <strong>Let songs come back</strong> work as in Automate.</li>
         <li>With no category selected, any song can be picked (talking intros are left out unless you select
           <em>Intros &amp; Talking</em>).</li>
       </ul>
@@ -669,6 +676,23 @@
         <li>If a quiet song needs a boost, a limiter stops it from distorting.</li>
         <li>The build summary shows the adjustment for each clip (e.g. <code>+2.4 dB</code>).</li>
       </ul>
+
+      <h3 id="fade-between">Fade between songs</h3>
+      <p>With <em>Transition</em> set to <strong>Fade out → in</strong>, each song fades to black before the next
+        one fades up — the music <em>and</em> the lights — instead of switching abruptly.</p>
+      <ul>
+        <li>The length you enter is the <strong>whole transition</strong>, split evenly: with <code>3</code> s, the
+          old song fades out over 1.5 s, then the new song fades in over 1.5 s.</li>
+        <li>The lights use xLights' own <strong>Fade Out</strong> and <strong>Fade In</strong> transitions on the
+          effects at each change, so you can fine-tune them in xLights.</li>
+        <li>The fades happen inside each clip, so the mashup's length doesn't change. When ✨ Automate or
+          🎲 Generate plans with a fade, they extend the clips slightly so the fade falls between the music rather
+          than over the last sung line.</li>
+        <li>The first song doesn't fade in and the last one doesn't fade out — use <strong>Fade out ending</strong>
+          for the very end.</li>
+      </ul>
+      <div class="tip">Crossfade or fade? A crossfade keeps the music going and blends two songs; a fade gives a short
+        dip to black between songs — good for contrasting songs or a "next act" feel.</div>
 
       <h3 id="fade">Fade out ending</h3>
       <p>With <strong>Fade out ending</strong> ticked (the default, 3 seconds), the mashup fades out instead of
@@ -803,6 +827,7 @@
         <tr><th>Term</th><th>Meaning</th></tr>
         <tr><td>Clip</td><td>One section of one song in the mashup — a card on the timeline.</td></tr>
         <tr><td>Crossfade</td><td>The overlap where one song fades out as the next fades in.</td></tr>
+        <tr><td>Fade out → in</td><td>A transition with no overlap: the old song fades to black, then the new one fades up. The length is split evenly between the two.</td></tr>
         <tr><td>BPM</td><td>Beats per minute — the song's tempo.</td></tr>
         <tr><td>Key / Camelot code</td><td>The song's musical key. The Camelot code (e.g. <code>8A</code>) makes matching easy: the same number, or one apart, usually sounds good together.</td></tr>
         <tr><td>Bar line / downbeat</td><td>The first beat of a bar — the natural place to start or end a section.</td></tr>

@@ -500,7 +500,8 @@ def plan_signature(plan):
 def generate(store, seq_by_path, analysis_cache_dir, opts, progress=None, log=print):
     """
     opts: categories, match_all, count, pinned, excluded, target_s,
-          max_total_s, allow_reuse, online, crossfade_ms
+          max_total_s, allow_reuse, online, transition, crossfade_ms,
+          fade_between_ms
     """
     progress = progress or (lambda f, m: None)
     lv = view(store)
@@ -529,6 +530,7 @@ def generate(store, seq_by_path, analysis_cache_dir, opts, progress=None, log=pr
             seqs, analysis_cache_dir, target_s=opts['target_s'], allow_reorder=True,
             allow_reuse=opts['allow_reuse'], max_total_s=opts['max_total_s'],
             online=opts['online'], crossfade_ms=opts['crossfade_ms'],
+            transition=opts.get('transition'), fade_between_ms=opts.get('fade_between_ms'),
             seed=rng.getrandbits(32), log=log)
         if plan_signature(plan) not in past_plans:
             break
