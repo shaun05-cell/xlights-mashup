@@ -15,17 +15,67 @@ A local web app that builds **mashup sequences** from an existing [xLights](http
 
 The app only **reads** your show — everything it creates goes to its own `output/` folder.
 
-## Setup
+## Download and install (Windows)
 
-Requires Python 3.12+ (developed on 3.15) on Windows.
+### 1. Install Python (skip if you already have it)
 
-```bash
-python install.py
+1. Download **Python 3.12 or newer** from [python.org/downloads](https://www.python.org/downloads/).
+2. Run the installer and **tick "Add python.exe to PATH"** on the first screen, then click **Install Now**.
+
+### 2. Download the project as a zip
+
+Download **[xlights-mashup-main.zip](https://github.com/shaun05-cell/xlights-mashup/archive/refs/heads/main.zip)** (about 1.3 MB).
+
+Or, on the [project page](https://github.com/shaun05-cell/xlights-mashup), click the green **Code** button, then **Download ZIP**.
+
+### 3. Extract the zip
+
+1. Open your **Downloads** folder, right-click **xlights-mashup-main.zip** and choose **Extract All…**
+2. Pick where to put it — for example your **Documents** folder — and click **Extract**.
+
+You'll get a folder called **`xlights-mashup-main`** containing `app.py`, `install.py`, `requirements.txt` and the `core`, `static` and `templates` folders. You can rename the folder if you like.
+
+> Windows lets you open a zip like a folder without extracting it — don't run anything from there. Always extract first.
+
+### 4. Run the installer
+
+1. Open the extracted **`xlights-mashup-main`** folder in File Explorer.
+2. Click in the **address bar** at the top, type `cmd` and press **Enter**. A Command Prompt opens in that folder.
+3. Type this and press **Enter**:
+
+   ```bat
+   python install.py
+   ```
+
+4. Wait for **✓ All set!** (the first time it downloads a few packages, which can take a minute).
+
+The installer checks your Python version, sets up pip if it's missing, installs the packages listed in `requirements.txt`, and confirms everything works. `python install.py --check` just reports what's installed without changing anything.
+
+**If you see "'python' is not recognized"**, use `py install.py` instead, or re-run the Python installer and tick **"Add python.exe to PATH"**.
+
+### 5. Start the app
+
+In the same Command Prompt:
+
+```bat
+python app.py
 ```
 
-The installer checks your Python version, sets up pip if it's missing, installs the packages in `requirements.txt` from PyPI (retrying for your user only if needed), and confirms everything works. `python install.py --check` just reports what's installed. (Prefer doing it by hand? `pip install -r requirements.txt` does the same install.)
+Your browser opens the app. Next time, open the folder, type `cmd` in the address bar again, and run `python app.py`.
 
-The first time you run it, the app asks for two folders (with standard Windows folder pickers) and saves them in `config.json`:
+### Updating to a new version
+
+1. Download and extract the new zip as in steps 2–3 (into a new folder).
+2. Copy these from your old folder into the new one, if they exist, to keep your settings and work:
+   - `config.json` — your show and media folders
+   - `saved_mashups` — your saved mashups
+   - `library_overrides.json` — your category corrections
+   - optional: `output`, `analysis_cache`, `library_cache` and `loudness_cache.json` — your built mashups and the library analysis (saves re-scanning)
+3. Run `python install.py` in the new folder, then `python app.py`.
+
+## Your show folders
+
+The first time you run the app, it asks for two folders (with standard Windows folder pickers) and saves them in `config.json`:
 
 - your **xLights show folder** — the one that contains `Sequences`
 - your **media folder** — where your music and video files live (Cancel = same as the show folder)
